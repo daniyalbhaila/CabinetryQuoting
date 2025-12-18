@@ -180,6 +180,10 @@
                         <div class="form-group"><label class="form-label">Markup (%)</label><input type="number" class="form-input" id="markupRate" value="80" onchange="recalculateAll()"></div>
                         <div class="form-group"><label class="form-label">Discount (%)</label><input type="number" class="form-input" id="discountRate" value="50" onchange="recalculateAll()"></div>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">USD to CAD Exchange Rate</label>
+                        <input type="number" class="form-input" id="exchangeRate" value="1.42" step="0.01" onchange="recalculateAll()">
+                    </div>
                 </div>
             </div>
             <div class="card">
@@ -232,7 +236,7 @@
 
         function mmToInches(mm) { return Math.round(mm / 25.4); }
         function formatDimension(mm) { return mm + 'mm / ' + mmToInches(mm) + '"'; }
-        function formatCurrency(amount) { return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function formatCurrency(amount) { return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' CAD'; }
 
         function toggleCard(cardId) {
             const cardBody = document.getElementById(cardId);
@@ -267,6 +271,7 @@
                 installRate: parseFloat(document.getElementById('installRate').value) || (isFullHouse ? 100 : 120),
                 drawerRate: parseFloat(document.getElementById('drawerRate').value) || 200,
                 accessoryRate: parseFloat(document.getElementById('accessoryRate').value) || 300,
+                exchangeRate: parseFloat(document.getElementById('exchangeRate').value) || 1.42,
                 markupRate: (parseFloat(document.getElementById('markupRate').value) || 80) / 100,
                 discountRate: (parseFloat(document.getElementById('discountRate').value) || 50) / 100,
                 defaultUpperHt: parseFloat(document.getElementById('defaultUpperHt').value) || CEILING_TO_UPPER_HT[defaultCeiling] || 760,
@@ -309,7 +314,9 @@
             const drawerCost = (item.drawers || 0) * settings.drawerRate;
             const accessoryCost = (item.accessories || 0) * settings.accessoryRate;
             const cabinetryGross = doorCost + carcassCost + drawerCost + accessoryCost;
-            const cabinetry = cabinetryGross * (1 - settings.discountRate);
+            const cabinetryUSD = cabinetryGross * (1 - settings.discountRate);
+            // Convert cabinetry from USD to CAD (shipping and install are already in CAD)
+            const cabinetry = cabinetryUSD * settings.exchangeRate;
             const shipping = totalLF * settings.shippingRate;
             const install = totalLF * settings.installRate;
             const subtotal = cabinetry + shipping + install;
