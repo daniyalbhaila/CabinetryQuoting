@@ -1,0 +1,21 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Zone Identifier files (Windows WSL)
+*.Zone.Identifier
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
