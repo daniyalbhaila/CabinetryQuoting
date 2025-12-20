@@ -19,3 +19,7 @@ desktop.ini
 # Temporary files
 *.tmp
 *.temp
+
+# Node.js (if npm is used)
+node_modules/
+package-lock.json
