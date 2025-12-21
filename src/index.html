@@ -33,7 +33,7 @@
     <div class="help-modal" id="helpModal">
         <div class="help-content">
             <div class="help-close">
-                <button>✕ Close</button>
+                <button id="closeHelpBtn">✕ Close</button>
             </div>
 
             <h2>📖 How to Use the Quote Calculator</h2>
@@ -73,7 +73,7 @@
             <p><strong>Start Fresh:</strong> Click "New Quote" to start a new quote.</p>
 
             <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-                <button class="btn btn-primary">Got It!</button>
+                <button class="btn btn-primary" id="closeHelpBtn2">Got It!</button>
             </div>
         </div>
     </div>
@@ -83,75 +83,75 @@
         <div class="config-content">
             <div class="config-header">
                 <h2>Configuration</h2>
-                <button class="btn btn-secondary">✕ Close</button>
+                <button class="btn btn-secondary" id="closeConfigBtn">✕ Close</button>
             </div>
             <div class="config-tabs">
-                <button class="config-tab active">Rates</button>
-                <button class="config-tab">Default Dimensions</button>
+                <button class="config-tab active" data-tab="rates">Rates</button>
+                <button class="config-tab" data-tab="dimensions">Default Dimensions</button>
             </div>
             <div class="config-tab-content active" id="ratesTab">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Shipping ($/LF)</label>
-                        <input type="number" class="form-input" id="shippingRate" value="60">
+                        <input type="number" class="form-input config-rate-input" id="shippingRate" value="60">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Install ($/LF)</label>
-                        <input type="number" class="form-input" id="installRate" value="100">
+                        <input type="number" class="form-input config-rate-input" id="installRate" value="100">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Drawer ($)</label>
-                        <input type="number" class="form-input" id="drawerRate" value="200">
+                        <input type="number" class="form-input config-rate-input" id="drawerRate" value="200">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Accessory ($)</label>
-                        <input type="number" class="form-input" id="accessoryRate" value="300">
+                        <input type="number" class="form-input config-rate-input" id="accessoryRate" value="300">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Markup (%)</label>
-                        <input type="number" class="form-input" id="markupRate" value="80">
+                        <input type="number" class="form-input config-rate-input" id="markupRate" value="80">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Discount (%)</label>
-                        <input type="number" class="form-input" id="discountRate" value="50">
+                        <input type="number" class="form-input config-rate-input" id="discountRate" value="50">
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">USD to CAD Exchange Rate</label>
-                    <input type="number" class="form-input" id="exchangeRate" value="1.42" step="0.01">
+                    <input type="number" class="form-input config-rate-input" id="exchangeRate" value="1.42" step="0.01">
                 </div>
             </div>
             <div class="config-tab-content" id="dimensionsTab">
                 <div class="form-group">
                     <label class="form-label">Upper Cabinet Height</label>
-                    <input type="number" class="form-input" id="defaultUpperHt" value="760">
+                    <input type="number" class="form-input config-dim-input" id="defaultUpperHt" value="760">
                     <div class="dimension-display" id="upperHtDisplay">760mm / 30"</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Base Cabinet Height</label>
-                    <input type="number" class="form-input" id="defaultBaseHt" value="920">
+                    <input type="number" class="form-input config-dim-input" id="defaultBaseHt" value="920">
                     <div class="dimension-display" id="baseHtDisplay">920mm / 36"</div>
                 </div>
                 <div class="divider"></div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Upper Depth</label>
-                        <input type="number" class="form-input" id="defaultUpperDp" value="300">
+                        <input type="number" class="form-input config-dim-input" id="defaultUpperDp" value="300">
                         <div class="dimension-display">300mm / 12"</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Base Depth</label>
-                        <input type="number" class="form-input" id="defaultBaseDp" value="600">
+                        <input type="number" class="form-input config-dim-input" id="defaultBaseDp" value="600">
                         <div class="dimension-display">600mm / 24"</div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Pantry Depth</label>
-                    <input type="number" class="form-input" id="defaultPantryDp" value="600">
+                    <input type="number" class="form-input config-dim-input" id="defaultPantryDp" value="600">
                     <div class="dimension-display">600mm / 24"</div>
                 </div>
             </div>
@@ -167,15 +167,15 @@
             </div>
             <div class="header-actions">
                 <div class="quote-total-header" id="headerTotal">$0.00</div>
-                <button class="btn btn-sm btn-secondary">
+                <button class="btn btn-sm btn-secondary" id="showConfigBtn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
                     Config
                 </button>
-                <button class="btn btn-sm btn-secondary">
+                <button class="btn btn-sm btn-secondary" id="showHelpBtn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     Help
                 </button>
-                <button class="btn btn-sm btn-secondary">
+                <button class="btn btn-sm btn-secondary" id="logoutBtn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     Logout
                 </button>
@@ -267,15 +267,15 @@
             <div class="items-header">
                 <h1>Line Items</h1>
                 <div class="items-header-actions">
-                    <button class="btn btn-sm btn-secondary">
+                    <button class="btn btn-sm btn-secondary" id="newQuoteBtn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         New Quote
                     </button>
-                    <button class="btn btn-sm btn-success">
+                    <button class="btn btn-sm btn-success" id="saveQuoteBtn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                         Save Quote
                     </button>
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" id="addLineItemBtn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Add Item
                     </button>

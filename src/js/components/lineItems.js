@@ -14,13 +14,22 @@ import { FINISH_RATES } from '../utils/constants.js';
  */
 export function initLineItems(onLineItemChange) {
     // Add line item button
-    const addButtons = document.querySelectorAll('[onclick*="addLineItem"]');
-    addButtons.forEach((btn) => {
-        btn.onclick = () => {
+    const addBtn = getElementById('addLineItemBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
             if (window.quoteApp && window.quoteApp.addLineItem) {
                 window.quoteApp.addLineItem();
             }
-        };
+        });
+    }
+
+    // Add first item button (in empty state)
+    document.addEventListener('click', (e) => {
+        if (e.target.id === 'addFirstItem' || e.target.closest('#addFirstItem')) {
+            if (window.quoteApp && window.quoteApp.addLineItem) {
+                window.quoteApp.addLineItem();
+            }
+        }
     });
 }
 

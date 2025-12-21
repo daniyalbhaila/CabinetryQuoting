@@ -21,16 +21,21 @@ export function initModals(onConfigChange) {
  */
 function setupHelpModal() {
     // Help button in header
-    const helpButtons = document.querySelectorAll('[onclick*="showHelp"]');
-    helpButtons.forEach((btn) => {
-        btn.onclick = showHelp;
-    });
+    const showHelpBtn = getElementById('showHelpBtn');
+    if (showHelpBtn) {
+        showHelpBtn.addEventListener('click', showHelp);
+    }
 
     // Close buttons
-    const closeButtons = document.querySelectorAll('[onclick*="hideHelp"]');
-    closeButtons.forEach((btn) => {
-        btn.onclick = hideHelp;
-    });
+    const closeHelpBtn = getElementById('closeHelpBtn');
+    if (closeHelpBtn) {
+        closeHelpBtn.addEventListener('click', hideHelp);
+    }
+
+    const closeHelpBtn2 = getElementById('closeHelpBtn2');
+    if (closeHelpBtn2) {
+        closeHelpBtn2.addEventListener('click', hideHelp);
+    }
 }
 
 /**
@@ -53,16 +58,16 @@ export function hideHelp() {
  */
 function setupConfigModal(onConfigChange) {
     // Config button in header
-    const configButtons = document.querySelectorAll('[onclick*="showConfig"]');
-    configButtons.forEach((btn) => {
-        btn.onclick = showConfig;
-    });
+    const showConfigBtn = getElementById('showConfigBtn');
+    if (showConfigBtn) {
+        showConfigBtn.addEventListener('click', showConfig);
+    }
 
-    // Close buttons
-    const closeButtons = document.querySelectorAll('[onclick*="hideConfig"]');
-    closeButtons.forEach((btn) => {
-        btn.onclick = hideConfig;
-    });
+    // Close button
+    const closeConfigBtn = getElementById('closeConfigBtn');
+    if (closeConfigBtn) {
+        closeConfigBtn.addEventListener('click', hideConfig);
+    }
 
     // Tab switching
     setupConfigTabs();
@@ -94,11 +99,11 @@ function setupConfigTabs() {
     const tabs = document.querySelectorAll('.config-tab');
     tabs.forEach((tab) => {
         tab.addEventListener('click', (e) => {
-            // Get tab name from onclick attribute
-            const tabName = tab.textContent.toLowerCase().includes('rates')
-                ? 'rates'
-                : 'dimensions';
-            switchConfigTab(e, tabName);
+            // Get tab name from data-tab attribute
+            const tabName = tab.getAttribute('data-tab');
+            if (tabName) {
+                switchConfigTab(e, tabName);
+            }
         });
     });
 }

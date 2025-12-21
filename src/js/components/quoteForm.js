@@ -67,18 +67,16 @@ function setupCardToggles() {
  */
 function setupQuoteHistoryListeners(onQuoteLoad) {
     // New quote button
-    const newQuoteButtons = document.querySelectorAll('[onclick*="newQuote"]');
-    newQuoteButtons.forEach((btn) => {
-        btn.onclick = () => handleNewQuote(onQuoteLoad);
-    });
+    const newQuoteBtn = getElementById('newQuoteBtn');
+    if (newQuoteBtn) {
+        newQuoteBtn.addEventListener('click', () => handleNewQuote(onQuoteLoad));
+    }
 
     // Save quote button
-    const saveQuoteButtons = document.querySelectorAll(
-        '[onclick*="saveQuoteWithName"]'
-    );
-    saveQuoteButtons.forEach((btn) => {
-        btn.onclick = () => handleSaveQuote(onQuoteLoad);
-    });
+    const saveQuoteBtn = getElementById('saveQuoteBtn');
+    if (saveQuoteBtn) {
+        saveQuoteBtn.addEventListener('click', () => handleSaveQuote(onQuoteLoad));
+    }
 }
 
 /**

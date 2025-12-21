@@ -51,9 +51,9 @@ function setupAuthListeners(onAuthSuccess) {
     }
 
     // Logout button
-    const logoutBtn = document.querySelector('[onclick*="logout"]');
+    const logoutBtn = getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.onclick = handleLogout;
+        logoutBtn.addEventListener('click', handleLogout);
     }
 }
 

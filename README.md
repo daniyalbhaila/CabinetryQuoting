@@ -1,13 +1,22 @@
 # Bosco Cabinetry Quote Calculator
 
-A professional, secure quote calculator for custom cabinetry projects. Built as a static web application with client-side storage and password protection.
+A professional, secure quote calculator for custom cabinetry projects. Built with a modular ES6 architecture for maintainability and future extensibility.
+
+## ⚡ Quick Start
+
+```bash
+npm run dev
+# Opens browser to http://localhost:8080
+# Default password: bosco2024
+```
 
 ## Features
 
 ### 🔐 Security
 - **Password Protection**: Client-side password authentication prevents unauthorized access
 - **Session Management**: Users stay logged in during their session
-- **Default Password**: `bosco2024` (change in `index.html` line 264)
+- **Default Password**: `bosco2024` (change in `src/js/components/auth.js` line 10)
+- **XSS Protection**: All user input is escaped to prevent security vulnerabilities
 
 ### 💾 Data Persistence
 - **Auto-Save**: Current quote automatically saves to localStorage on every change
@@ -365,9 +374,21 @@ If override removed: Reverts to 760mm
 
 ```
 quotingTool/
-├── index.html              # Main application file
-├── README.md               # This file
-├── .gitignore              # Git ignore rules
+├── src/                    # Source code
+│   ├── css/               # Stylesheets
+│   │   ├── main.css       # Main styles
+│   │   └── components.css # Component styles
+│   ├── js/                # JavaScript modules
+│   │   ├── app.js        # Main application
+│   │   ├── components/   # UI components
+│   │   ├── services/     # Business logic
+│   │   └── utils/        # Utilities
+│   └── index.html         # HTML structure
+├── package.json            # npm configuration
+├── README.md               # This file (user documentation)
+├── CLAUDE.md               # Developer/AI assistant guide
+├── CODE_REVIEW.md          # Code quality assessment
+└── .gitignore              # Git ignore rules
 └── assets/
     ├── Logo-Light.svg      # Bosco logo
     └── favicons/           # Favicon files
@@ -382,75 +403,89 @@ quotingTool/
 ## Installation
 
 ### Local Development
-1. Clone or download this repository
-2. Open `index.html` in a web browser
-3. Enter password: `bosco2024`
+```bash
+npm run dev
+# Server starts on http://localhost:8080
+# Opens browser automatically
+# Enter password: bosco2024
+```
 
 ### Static Hosting Deployment
 
 #### Netlify
 1. Drag and drop the `quotingTool` folder to Netlify
-2. Done! Your site is live
+2. Set publish directory to `src/`
+3. Done! Your site is live
 
 #### Vercel
 ```bash
 cd quotingTool
 npx vercel
+# Set output directory to: src
 ```
 
 #### GitHub Pages
 1. Create a new repository
 2. Push the `quotingTool` folder contents
 3. Enable GitHub Pages in repository settings
-4. Set source to main branch, root directory
+4. Set source to main branch, `/src` directory
 
 #### Azure Static Web Apps
 1. Create new Static Web App in Azure Portal
 2. Connect to your repository
-3. Set build folder to `/quotingTool`
+3. Set app location to `src/`
 
 ---
 
 ## Configuration
 
 ### Change Password
-Edit `index.html` line 264:
+Edit `src/js/components/auth.js` line 10:
 ```javascript
 const PASSWORD = 'your_new_password'; // Change this
 ```
 
 ### Adjust Default Rates
-Edit default values in the HTML form inputs (index.html):
-- **Shipping Rate**: Line 173 - `value="60"`
-- **Install Rate**: Line 174 - `value="100"`
-- **Drawer Rate**: Line 177 - `value="200"`
-- **Accessory Rate**: Line 178 - `value="300"`
-- **Markup**: Line 181 - `value="80"`
-- **Discount**: Line 182 - `value="50"`
+Edit `src/js/utils/constants.js` → `DEFAULT_RATES` object:
+```javascript
+export const DEFAULT_RATES = {
+    SHIPPING_PER_LF: 60,      // CAD per linear foot
+    INSTALL_PER_LF_FULL: 100, // CAD per linear foot (full house)
+    INSTALL_PER_LF_SINGLE: 120, // CAD per linear foot (single project)
+    DRAWER: 200,              // CAD per drawer
+    ACCESSORY: 300,           // CAD per accessory
+    EXCHANGE_RATE: 1.42,      // USD to CAD
+    MARKUP: 0.80,             // 80% markup
+    DISCOUNT: 0.50            // 50% discount
+};
+```
+
+Or edit default values in `src/index.html` form inputs:
+- Config modal "Rates" tab has all rate inputs
 
 ### Modify Finish Rates
-Edit the `FINISH_RATES` object in JavaScript (index.html line 283):
+Edit `src/js/utils/constants.js` → `FINISH_RATES` object:
 ```javascript
-const FINISH_RATES = {
-    'PVC': { unshaped: 100, shaped: 200 },
-    'Melamine': { unshaped: 70, shaped: 70 },
-    'Skin': { unshaped: 150, shaped: 150 },
+export const FINISH_RATES = {
+    PVC: { unshaped: 100, shaped: 200 },
+    Melamine: { unshaped: 70, shaped: 70 },
+    Skin: { unshaped: 150, shaped: 150 },
     'Paint/Lacquer': { unshaped: 170, shaped: 200 },
-    'Powder': { unshaped: 100, shaped: 200 },
-    'Veneer': { unshaped: 440, shaped: 440 },
-    'PET': { unshaped: 110, shaped: 110 }
+    Powder: { unshaped: 100, shaped: 200 },
+    Veneer: { unshaped: 440, shaped: 440 },
+    PET: { unshaped: 110, shaped: 110 }
 };
 ```
 
 ### Modify Ceiling Height Mappings
-Edit the lookup tables (index.html line 284-285):
+Edit `src/js/utils/constants.js`:
 ```javascript
-const CEILING_TO_MM = {
+export const CEILING_TO_MM = {
     '8': 2450, '9': 2750, '10': 3050,
     '11': 3350, '12': 3660, '13': 3960
 };
 
-const CEILING_TO_UPPER_HT = {
+export const CEILING_TO_UPPER_HT = {
     '8': 760, '9': 920, '10': 1070,
     '11': 1220, '12': 1320, '13': 1473
 };
@@ -620,7 +655,7 @@ const CEILING_TO_UPPER_HT = {
 **Solutions**:
 - Clear browser cache and try again
 - Check browser console (F12) for JavaScript errors
-- Verify password in source code (index.html line 264)
+- Verify password in source code (`src/js/components/auth.js` line 10)
 - Try different browser
 - Check for typos in password
 
@@ -671,7 +706,8 @@ const CEILING_TO_UPPER_HT = {
 
 ## Technical Specifications
 
-- **Framework**: Vanilla JavaScript (no dependencies)
+- **Framework**: Vanilla JavaScript ES6 modules (no dependencies)
+- **Architecture**: Modular component-based design
 - **Storage**: localStorage API (current quote + history)
 - **Authentication**: sessionStorage for session management
 - **Styling**: CSS3 with CSS Custom Properties (variables)
@@ -679,9 +715,10 @@ const CEILING_TO_UPPER_HT = {
   - DM Sans (body text, UI elements)
   - Space Mono (monospace, numbers, currency)
 - **Icons**: Inline SVG (no icon library needed)
-- **File Size**: ~70KB (HTML + CSS + JS combined, uncompressed)
-- **Performance**: All calculations client-side (instant updates)
+- **File Size**: ~80KB (all files combined, uncompressed)
+- **Performance**: All calculations client-side (instant updates), debounced auto-save
 - **Responsive**: Mobile-first design with breakpoints at 768px and 1200px
+- **Security**: XSS protection via input escaping
 
 ### Browser APIs Used
 - `localStorage`: Persistent data storage
@@ -711,6 +748,16 @@ Proprietary - Bosco Cabinetry Internal Use Only
 
 ## Changelog
 
+### Version 2.0.0 (December 2024)
+- **Major refactor**: Modular ES6 architecture
+- Fixed button event listeners (proper IDs instead of onclick)
+- Added XSS protection (input escaping)
+- Added input validation
+- Improved performance (debounced saves)
+- Better error handling
+- Separated concerns (components, services, utilities)
+- Comprehensive developer documentation (CLAUDE.md)
+
 ### Version 1.0.0 (December 2024)
 - Initial release
 - Password protection
@@ -724,6 +771,6 @@ Proprietary - Bosco Cabinetry Internal Use Only
 
 ---
 
-**Version**: 1.0.0
-**Last Updated**: December 17, 2024
+**Version**: 2.0.0
+**Last Updated**: December 20, 2024
 **Author**: Bosco Cabinetry Development Team
