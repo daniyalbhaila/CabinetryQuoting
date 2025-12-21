@@ -8,6 +8,9 @@ import { escapeHtml, formatCurrency, formatDimension } from '../utils/formatting
 import { calculateLineItem, getProjectSettings } from '../services/calculator.js';
 import { FINISH_RATES } from '../utils/constants.js';
 
+// Store references to avoid multiple event listener attachments
+let listenersAttached = false;
+
 /**
  * Initialize line items
  * @param {Function} onLineItemChange - Callback when line item changes
@@ -23,14 +26,92 @@ export function initLineItems(onLineItemChange) {
         });
     }
 
-    // Add first item button (in empty state)
-    document.addEventListener('click', (e) => {
-        if (e.target.id === 'addFirstItem' || e.target.closest('#addFirstItem')) {
-            if (window.quoteApp && window.quoteApp.addLineItem) {
-                window.quoteApp.addLineItem();
+    // Setup event delegation on container (only once)
+    if (!listenersAttached) {
+        setupLineItemEventDelegation();
+        listenersAttached = true;
+    }
+}
+
+/**
+ * Setup event delegation for line items (called once)
+ */
+function setupLineItemEventDelegation() {
+    const container = getElementById('lineItemsContainer');
+    if (!container) return;
+
+    // Handle all clicks via delegation
+    container.addEventListener('click', (e) => {
+        const action = e.target.closest('[data-action]')?.dataset.action;
+        const id = parseInt(e.target.closest('[data-id]')?.dataset.id);
+
+        if (!action || isNaN(id)) {
+            // Check for "Add First Item" button
+            if (e.target.id === 'addFirstItem' || e.target.closest('#addFirstItem')) {
+                if (window.quoteApp && window.quoteApp.addLineItem) {
+                    window.quoteApp.addLineItem();
+                }
+            }
+            return;
+        }
+
+        if (action === 'toggle') {
+            handleToggleCollapse(id);
+        } else if (action === 'delete') {
+            e.stopPropagation();
+            if (window.quoteApp && window.quoteApp.removeLineItem) {
+                window.quoteApp.removeLineItem(id);
+            }
+        } else if (action === 'toggle-override') {
+            e.stopPropagation();
+            handleToggleOverride(id);
+        }
+    });
+
+    // Handle input changes via delegation
+    container.addEventListener('change', (e) => {
+        const action = e.target.dataset.action;
+        const id = parseInt(e.target.dataset.id);
+        const field = e.target.dataset.field;
+
+        if (action === 'update' && !isNaN(id) && field) {
+            if (window.quoteApp && window.quoteApp.updateLineItem) {
+                window.quoteApp.updateLineItem(id, field, e.target.value);
+            }
+        } else if (action === 'update-name' && !isNaN(id)) {
+            if (window.quoteApp && window.quoteApp.updateLineItem) {
+                window.quoteApp.updateLineItem(id, 'name', e.target.value);
             }
         }
     });
+}
+
+/**
+ * Handle toggle line item collapse
+ * @param {number} id - Line item ID
+ */
+function handleToggleCollapse(id) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item) {
+            item.collapsed = !item.collapsed;
+            window.quoteApp.recalculateAll();
+        }
+    }
+}
+
+/**
+ * Handle toggle override section
+ * @param {number} id - Line item ID
+ */
+function handleToggleOverride(id) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item) {
+            item.showOverride = !item.showOverride;
+            window.quoteApp.recalculateAll();
+        }
+    }
 }
 
 /**
@@ -56,9 +137,6 @@ export function renderLineItems(lineItems, onUpdate, onDelete) {
     container.innerHTML = lineItems
         .map((item, index) => renderLineItem(item, index))
         .join('');
-
-    // Attach event listeners
-    attachLineItemListeners(lineItems, onUpdate, onDelete);
 }
 
 /**
@@ -437,85 +515,6 @@ function renderLineItemFooter(item, calc, dims) {
     `;
 }
 
-/**
- * Attach event listeners to line items
- * @param {Array} lineItems - Array of line items
- * @param {Function} onUpdate - Callback when item updates
- * @param {Function} onDelete - Callback when item deleted
- */
-function attachLineItemListeners(lineItems, onUpdate, onDelete) {
-    const container = getElementById('lineItemsContainer');
-    if (!container) return;
-
-    // Use event delegation
-    container.addEventListener('click', (e) => {
-        const action = e.target.closest('[data-action]')?.dataset.action;
-        const id = parseInt(e.target.closest('[data-id]')?.dataset.id);
-
-        if (!action || isNaN(id)) return;
-
-        if (action === 'toggle') {
-            handleToggle(id, lineItems, onUpdate);
-        } else if (action === 'delete') {
-            e.stopPropagation();
-            if (onDelete) onDelete(id);
-        } else if (action === 'toggle-override') {
-            e.stopPropagation();
-            handleToggleOverride(id, lineItems, onUpdate);
-        }
-    });
-
-    // Handle input changes
-    container.addEventListener('change', (e) => {
-        const action = e.target.dataset.action;
-        const id = parseInt(e.target.dataset.id);
-        const field = e.target.dataset.field;
-
-        if (action === 'update' && !isNaN(id) && field && onUpdate) {
-            onUpdate(id, field, e.target.value);
-        } else if (action === 'update-name' && !isNaN(id) && onUpdate) {
-            onUpdate(id, 'name', e.target.value);
-        }
-    });
-
-    // Handle "Add First Item" button in empty state
-    const addFirstBtn = getElementById('addFirstItem');
-    if (addFirstBtn) {
-        addFirstBtn.onclick = () => {
-            if (window.quoteApp && window.quoteApp.addLineItem) {
-                window.quoteApp.addLineItem();
-            }
-        };
-    }
-}
-
-/**
- * Handle toggle line item collapse
- * @param {number} id - Line item ID
- * @param {Array} lineItems - Array of line items
- * @param {Function} onUpdate - Callback when updated
- */
-function handleToggle(id, lineItems, onUpdate) {
-    const item = lineItems.find((i) => i.id === id);
-    if (item) {
-        item.collapsed = !item.collapsed;
-        if (onUpdate) onUpdate();
-    }
-}
-
-/**
- * Handle toggle override section
- * @param {number} id - Line item ID
- * @param {Array} lineItems - Array of line items
- * @param {Function} onUpdate - Callback when updated
- */
-function handleToggleOverride(id, lineItems, onUpdate) {
-    const item = lineItems.find((i) => i.id === id);
-    if (item) {
-        item.showOverride = !item.showOverride;
-        if (onUpdate) onUpdate();
-    }
-}
 
 /**
  * Update line item DOM without full re-render
