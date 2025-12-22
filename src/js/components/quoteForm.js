@@ -82,7 +82,8 @@ function setupQuoteHistoryListeners(onQuoteLoad) {
 }
 
 /**
- * Load quote data into form
+ * Load quote data into form (only project-level fields)
+ * Note: Rates and dimensions are now loaded via loadQuoteOverrides() in v2 3-tier system
  * @param {Object} quoteData - Quote data to load
  */
 export function loadQuoteData(quoteData) {
@@ -98,44 +99,21 @@ export function loadQuoteData(quoteData) {
     setValue('projectType', quoteData.projectType || 'full');
     setValue('carcassSupplier', quoteData.carcassSupplier || 'holike');
     setValue('defaultCeiling', quoteData.defaultCeiling || '8');
-    setValue('shippingRate', quoteData.shippingRate || 60);
-    setValue('installRate', quoteData.installRate || 100);
-    setValue('drawerRate', quoteData.drawerRate || 200);
-    setValue('accessoryRate', quoteData.accessoryRate || 300);
-    setValue('exchangeRate', quoteData.exchangeRate || 1.42);
-    setValue('markupRate', quoteData.markupRate || 80);
-    setValue('discountRate', quoteData.discountRate || 50);
-    setValue('defaultUpperHt', quoteData.defaultUpperHt || 760);
-    setValue('defaultBaseHt', quoteData.defaultBaseHt || 920);
-    setValue('defaultUpperDp', quoteData.defaultUpperDp || 300);
-    setValue('defaultBaseDp', quoteData.defaultBaseDp || 600);
-    setValue('defaultPantryDp', quoteData.defaultPantryDp || 600);
 }
 
 /**
- * Get current form data
+ * Get current form data (only project-level fields, not rates/dimensions)
+ * Note: Rates and dimensions are now handled via quote overrides in v2 3-tier system
  * @returns {Object} Form data
  */
 export function getFormData() {
     return {
-        clientName: getElementById('clientName').value,
-        projectName: getElementById('projectName').value,
-        quoteDate: getElementById('quoteDate').value,
-        projectType: getElementById('projectType').value,
-        carcassSupplier: getElementById('carcassSupplier').value,
-        defaultCeiling: getElementById('defaultCeiling').value,
-        shippingRate: getElementById('shippingRate').value,
-        installRate: getElementById('installRate').value,
-        drawerRate: getElementById('drawerRate').value,
-        accessoryRate: getElementById('accessoryRate').value,
-        exchangeRate: getElementById('exchangeRate').value,
-        markupRate: getElementById('markupRate').value,
-        discountRate: getElementById('discountRate').value,
-        defaultUpperHt: getElementById('defaultUpperHt').value,
-        defaultBaseHt: getElementById('defaultBaseHt').value,
-        defaultUpperDp: getElementById('defaultUpperDp').value,
-        defaultBaseDp: getElementById('defaultBaseDp').value,
-        defaultPantryDp: getElementById('defaultPantryDp').value
+        clientName: getElementById('clientName')?.value || '',
+        projectName: getElementById('projectName')?.value || '',
+        quoteDate: getElementById('quoteDate')?.value || '',
+        projectType: getElementById('projectType')?.value || 'full',
+        carcassSupplier: getElementById('carcassSupplier')?.value || 'holike',
+        defaultCeiling: getElementById('defaultCeiling')?.value || '8'
     };
 }
 
