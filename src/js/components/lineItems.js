@@ -992,15 +992,10 @@ function renderLineItemFooter(item, calc, dims) {
  */
 export function updateLineItemDOM(id, calc) {
     // Update price with calculator icon preserved
+    // Update price (just text, icon is separate)
     const priceEl = getElementById(`price-${id}`);
     if (priceEl) {
-        priceEl.innerHTML = `
-            ${formatCurrency(calc.finalPrice)}
-            <i class="calculator-icon" data-lucide="calculator" data-action="show-breakdown" data-id="${id}"></i>
-        `;
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
+        priceEl.textContent = formatCurrency(calc.finalPrice);
     }
     setText(`lf-${id}`, `${calc.totalLF} LF`);
     setText(`cabinetry-${id}`, formatCurrency(calc.cabinetry));
