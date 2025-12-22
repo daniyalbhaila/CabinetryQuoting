@@ -18,11 +18,19 @@ npm run dev
 - **Default Password**: `bosco2024` (change in `src/js/components/auth.js` line 10)
 - **XSS Protection**: All user input is escaped to prevent security vulnerabilities
 
+### 🎯 3-Tier Configuration System (NEW in v3.0)
+- **Global Defaults**: Set default rates and dimensions once for all new quotes
+- **Quote-Level Overrides**: Customize specific rates for individual quotes
+- **Line-Item Overrides**: Fine-tune pricing for specific rooms/sections
+- **Clear Visual Hierarchy**: See at a glance which settings are custom vs. defaults
+- **Easy Reset**: Revert overrides back to defaults with one click
+
 ### 💾 Data Persistence
 - **Auto-Save**: Current quote automatically saves to localStorage on every change
 - **Quote History**: Save multiple quotes with custom names
 - **Resume Work**: Automatically loads last working quote on page load
 - **No Data Loss**: All data stored locally in browser
+- **Global Config**: Your default settings persist across all quotes
 
 ### 📋 Quote Management
 - **Client Information**: Track client name, project name, and date
@@ -35,22 +43,29 @@ npm run dev
 - **Linear Footage Pricing**: Upper cabinets, base cabinets, pantry cabinets
 - **Multiple Finishes**: PVC, Melamine, Skin, Paint/Lacquer, Powder, Veneer, PET
 - **Shaped Doors**: Different pricing for shaped vs. unshaped doors
+- **Open Shelf Option**: Zero door cost for open shelving
 - **Add-ons**: Drawer and accessory pricing
 - **Carcass Suppliers**: Holike ($65/sqm) or Allure ($200/sqm)
-- **Ceiling Heights**: 8ft to 13ft with auto-adjusting upper cabinet heights
-- **Dimension Overrides**: Override default dimensions per line item
-- **Project Types**: Full house vs. single project (affects install rates)
-- **Markup & Discount**: Configurable markup and discount percentages
+- **Ceiling Heights**: 8ft to 13ft with auto-adjusting upper cabinet heights (per room)
+- **3-Tier Dimension Overrides**: Global → Quote → Line Item cascading resolution
+- **3-Tier Rate Overrides**: Customize shipping, install, drawer, accessory, markup, discount at any level
+- **Project Types**: Full house vs. single project (affects install rates AND markup rates)
+  - Full House: 100/LF install, 80% markup (default)
+  - Single Project: 120/LF install, 90% markup (default)
 - **Real-time Updates**: All calculations update instantly
+- **Additional Items**: Add custom line items with CAD pricing per room
 
 ### 🎨 User Interface
 - **Dark Theme**: Professional dark UI with gold accents
 - **Responsive Design**: Works on desktop and mobile
+- **Progressive Disclosure**: Basic fields always visible, advanced options collapsed
 - **Collapsible Sections**: Organize settings and line items
 - **Sticky Header**: Total always visible while scrolling
 - **Visual Feedback**: Smooth animations and hover effects
+- **Status Indicators**: Clear badges showing custom vs. global settings
 - **Keyboard Friendly**: Tab navigation support
 - **Help Modal**: Built-in user guide accessible from header
+- **Clean Hierarchy**: Visual spacing makes sections easy to scan
 
 ---
 
@@ -59,21 +74,45 @@ npm run dev
 ### Getting Started
 
 1. **Login**: Enter password `bosco2024` to access the calculator
-2. **Fill Client Info**: Add client name, project name, and date
-3. **Configure Settings**: Set project type, ceiling height, and rates
-4. **Add Line Items**: Click "Add Item" to create rooms/sections
-5. **Save Quote**: Click "Save Quote" in sidebar to preserve your work
+2. **Set Global Defaults** (One-Time Setup):
+   - Click "Global Settings" in header
+   - Set your default rates (shipping, install, drawer, accessory, markup, discount)
+   - Set default dimensions (upper height, base height, depths)
+   - Click "Close" - these apply to all new quotes
+3. **Fill Client Info**: Add client name, project name, and date in sidebar
+4. **Configure Project**: Set project type, ceiling height, carcass supplier
+5. **Customize Quote (Optional)**: Expand "Custom Rates for This Quote" in Project Settings to override global defaults for this specific quote
+6. **Add Line Items**: Click "Add Item" to create rooms/sections
+7. **Save Quote**: Click "Save Quote" in sidebar to preserve your work
 
 ### Adding Line Items
 
-Each line item represents a room or cabinet section:
+Each line item represents a room or cabinet section with Basic and Advanced settings:
 
-1. **Name**: Click to name the item (e.g., "Kitchen", "Master Bath")
-2. **Linear Footage**: Enter LF for upper, base, and pantry cabinets
-3. **Finish**: Select door finish type (PVC, Melamine, etc.)
-4. **Shaped Doors**: Choose if doors are shaped/profiled
-5. **Drawers/Accessories**: Add count for pricing
-6. **Dimensions**: Override defaults if needed for specific rooms
+#### Basic Section (Always Visible - 3 Columns)
+**Column 1: Linear Footage**
+1. **Upper LF**: Linear feet of upper cabinets
+2. **Base LF**: Linear feet of base cabinets
+3. **Pantry LF**: Linear feet of pantry cabinets
+
+**Column 2: Finish & Options**
+1. **Finish**: Select door finish type (PVC, Melamine, etc.)
+2. **Shaped Doors**: Choose if doors are shaped/profiled
+3. **Open Shelf**: Enable for zero door cost
+4. **Drawers**: Number of drawers
+5. **Accessories**: Number of accessories
+
+**Column 3: Room Settings**
+1. **Ceiling Height**: Override project default (8ft-13ft)
+2. **Carcass Supplier**: Holike or Allure
+
+#### Advanced Section (Collapsed by Default)
+Click "Advanced Settings" to access:
+- **Dimension Overrides**: Override cabinet heights and depths for this specific room (height/depth in mm)
+- **Pricing Overrides**: Override shipping, install, drawer, accessory, markup, discount rates for this specific room
+- **Additional Items**: Add custom line items (e.g., "Crown Molding - $500 CAD")
+
+**Tip**: Most users only need the Basic section (90% of use cases). Advanced options provide room-level customization when needed.
 
 ### Saving & Loading Quotes
 
@@ -347,26 +386,67 @@ $7,034.05 × (1 + 0.80) = $12,661.29
 **Step 7**: Apply markup
 - **Final Price: $7,348.78 × 1.80 = $13,227.80**
 
-### Override Behavior
+### 3-Tier Configuration System
 
-**Per-Line-Item Overrides**:
-- Ceiling Height: Uses item value or project default
-- Carcass Supplier: Uses item value or project default
-- Dimensions: Uses override value if "Override Dimensions" is enabled AND value is entered
+The application uses a cascading resolution system with three levels of configuration:
 
-**Priority Chain**:
 ```
-Line Item Override → Project Default → Hardcoded Fallback
+┌─ TIER 1: GLOBAL DEFAULTS ────────────────┐
+│ Set once, applies to all new quotes      │
+│ Location: Global Settings modal (header) │
+└───────────────────────────────────────────┘
+            ↓ (inherited unless overridden)
+┌─ TIER 2: QUOTE-LEVEL OVERRIDES ──────────┐
+│ Custom settings for this specific quote  │
+│ Location: Project Settings dropdown      │
+└───────────────────────────────────────────┘
+            ↓ (inherited unless overridden)
+┌─ TIER 3: LINE-ITEM OVERRIDES ────────────┐
+│ Custom settings for specific rooms       │
+│ Location: Line Item Advanced section     │
+└───────────────────────────────────────────┘
 ```
 
-**Example**:
+**Priority Chain** (for rates and dimensions):
 ```
-Project Default Ceiling: 8ft (Upper: 760mm)
-Line Item Ceiling Override: 10ft (Upper: 1070mm)
-Result: Uses 1070mm for this line item only
+Line Item Override → Quote Override → Global Default
+```
 
-If override removed: Reverts to 760mm
+**Examples**:
+
+#### Example 1: Shipping Rate Resolution
 ```
+Global Default:     $60/LF
+Quote Override:     $75/LF  (special client pricing)
+Line Item Override: Not set
+
+Result: All line items use $75/LF
+```
+
+#### Example 2: Mixed Overrides
+```
+Global Default:  Install $100/LF, Markup 80%
+Quote Override:  Install $120/LF  (no markup override)
+Line Item (Bath): Install not set, Markup 90%
+
+Result for Bath:
+  - Install: $120/LF  (from quote)
+  - Markup:  90%      (from line item)
+```
+
+#### Example 3: Dimension Resolution
+```
+Global Default Upper Height: 760mm
+Quote Override: Not set
+Line Item Ceiling Override: 10ft → Auto-calculates 1070mm
+
+Result: This line item uses 1070mm, others use 760mm
+```
+
+**Visual Indicators**:
+- Badge shows "Global" when using defaults
+- Badge shows "X Custom" when quote has overrides
+- Status text shows "Using quote defaults" or "Custom settings" per line item
 
 ---
 
@@ -497,26 +577,58 @@ export const CEILING_TO_UPPER_HT = {
 
 ### Storage Schema
 
+**Global Configuration** (`localStorage: bosco_global_config`) - NEW in v3.0:
+```json
+{
+  "version": 1,
+  "rates": {
+    "shippingRate": 60,
+    "installRate": 100,
+    "drawerRate": 200,
+    "accessoryRate": 300,
+    "exchangeRate": 1.42,
+    "markupRate": 80,
+    "discountRate": 50
+  },
+  "dimensions": {
+    "defaultUpperHt": 760,
+    "defaultBaseHt": 920,
+    "defaultUpperDp": 300,
+    "defaultBaseDp": 600,
+    "defaultPantryDp": 600
+  },
+  "materials": {
+    "finishRates": {
+      "PVC": { "unshaped": 100, "shaped": 200 },
+      "Melamine": { "unshaped": 70, "shaped": 70 },
+      "Skin": { "unshaped": 150, "shaped": 150 },
+      "Paint/Lacquer": { "unshaped": 170, "shaped": 200 },
+      "Powder": { "unshaped": 100, "shaped": 200 },
+      "Veneer": { "unshaped": 440, "shaped": 440 },
+      "PET": { "unshaped": 110, "shaped": 110 }
+    },
+    "carcassRates": {
+      "holike": 65,
+      "allure": 200
+    }
+  }
+}
+```
+
 **Current Quote** (`localStorage: bosco_current_quote`):
 ```json
 {
+  "version": 2,
   "clientName": "John Smith",
   "projectName": "Luxury Home Renovation",
-  "quoteDate": "2024-12-17",
+  "quoteDate": "2024-12-22",
   "projectType": "full",
   "carcassSupplier": "holike",
   "defaultCeiling": "8",
-  "shippingRate": "60",
-  "installRate": "100",
-  "drawerRate": "200",
-  "accessoryRate": "300",
-  "markupRate": "80",
-  "discountRate": "50",
-  "defaultUpperHt": "760",
-  "defaultBaseHt": "920",
-  "defaultUpperDp": "300",
-  "defaultBaseDp": "600",
-  "defaultPantryDp": "600",
+  "overrides": {
+    "installRate": 120,
+    "defaultUpperHt": 850
+  },
   "lineItems": [
     {
       "id": 1,
@@ -526,6 +638,7 @@ export const CEILING_TO_UPPER_HT = {
       "pantryLF": 5,
       "finish": "PVC",
       "shaped": "no",
+      "openShelf": "no",
       "drawers": 8,
       "accessories": 3,
       "ceilingFt": "",
@@ -536,7 +649,16 @@ export const CEILING_TO_UPPER_HT = {
       "baseDp": 0,
       "pantryDp": 0,
       "showOverride": false,
-      "collapsed": false
+      "showAdvanced": false,
+      "showConfigOverride": false,
+      "collapsed": false,
+      "overrideShippingRate": null,
+      "overrideInstallRate": null,
+      "overrideDrawerRate": null,
+      "overrideAccessoryRate": null,
+      "overrideMarkupRate": null,
+      "overrideDiscountRate": null,
+      "additionalItems": []
     }
   ],
   "nextId": 2
@@ -748,6 +870,27 @@ Proprietary - Bosco Cabinetry Internal Use Only
 
 ## Changelog
 
+### Version 3.0.0 (December 2024) - 3-Tier Configuration System
+- **NEW**: 3-tier configuration system (Global → Quote → Line Item)
+- **NEW**: Global Settings modal for company-wide defaults
+- **NEW**: Quote-level overrides in Project Settings dropdown
+- **NEW**: Line item restructured with Basic/Advanced progressive disclosure
+- **NEW**: Ceiling height moved to Basic section (Room Settings column)
+- **NEW**: Project-type-specific markup rates (80% full house, 90% single project)
+- **NEW**: Open shelf option (zero door cost)
+- **NEW**: Additional items per line item (custom CAD pricing)
+- **NEW**: Visual status indicators showing custom vs. default settings
+- **NEW**: Reset buttons to clear overrides back to defaults
+- **IMPROVED**: 3-column Basic layout (Measurements | Finish & Options | Room Settings)
+- **IMPROVED**: Cleaner visual hierarchy with better spacing
+- **IMPROVED**: All calculations now use cascading 3-tier resolution
+- **IMPROVED**: Markup rate auto-selects based on project type
+- **FIXED**: Calculation bug where 0 LF resulted in non-zero cost (carcass side panels)
+- **FIXED**: Separator visual issues in Advanced sections
+- **REMOVED**: All emojis from UI for professional appearance
+- **MIGRATION**: Auto-migrates v1/v2 quotes to v3 schema
+- **DOCS**: Updated README and CLAUDE.md with 3-tier system documentation
+
 ### Version 2.0.0 (December 2024)
 - **Major refactor**: Modular ES6 architecture
 - Fixed button event listeners (proper IDs instead of onclick)
@@ -771,6 +914,6 @@ Proprietary - Bosco Cabinetry Internal Use Only
 
 ---
 
-**Version**: 2.0.0
-**Last Updated**: December 20, 2024
+**Version**: 3.0.0
+**Last Updated**: December 22, 2024
 **Author**: Bosco Cabinetry Development Team

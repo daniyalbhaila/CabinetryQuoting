@@ -4,85 +4,161 @@
  */
 
 import {
-    FINISH_RATES,
     CEILING_TO_MM,
     CEILING_TO_UPPER_HT,
-    CONVERSION,
-    CARCASS_RATES
+    CONVERSION
 } from '../utils/constants.js';
 import { getElementById } from '../utils/dom.js';
+import { loadGlobalConfig, ensureGlobalConfig } from './storage.js';
 
 /**
- * Get current project settings from form
+ * Get current quote from app state
+ * @returns {Object|null} Current quote object
+ */
+function getCurrentQuote() {
+    // Access current quote from app state
+    // This is temporary until we refactor to pass quote explicitly
+    if (window.quoteApp) {
+        return {
+            overrides: window.quoteApp.quoteOverrides || {}
+        };
+    }
+    return { overrides: {} };
+}
+
+/**
+ * Get finish rates from global config
+ * @returns {Object} Finish rates object
+ */
+function getFinishRates() {
+    const globalConfig = ensureGlobalConfig();
+    return globalConfig.materials.finishRates;
+}
+
+/**
+ * Get carcass rates from global config
+ * @returns {Object} Carcass rates object
+ */
+function getCarcassRates() {
+    const globalConfig = ensureGlobalConfig();
+    return globalConfig.materials.carcassRates;
+}
+
+/**
+ * Check if a finish has a different shaped rate
+ * @param {string} finish - Finish name
+ * @returns {boolean} True if shaped rate is different from unshaped
+ */
+export function hasShapedRate(finish) {
+    const finishRates = getFinishRates();
+    if (!finishRates[finish]) return false;
+
+    return finishRates[finish].shaped !== finishRates[finish].unshaped;
+}
+
+/**
+ * Get current project settings from form (with 3-tier resolution)
  * @returns {Object} Project settings
  */
 export function getProjectSettings() {
-    const projectType = getElementById('projectType').value;
+    // Get global config (ensure it exists)
+    const globalConfig = ensureGlobalConfig();
+    const quote = getCurrentQuote();
+
+    // Project-specific settings (not overridable via config)
+    const projectType = getElementById('projectType')?.value || 'full';
     const isFullHouse = projectType === 'full';
-    const defaultCeiling = getElementById('defaultCeiling').value;
+    const defaultCeiling = getElementById('defaultCeiling')?.value || '8';
+    const carcassSupplier = getElementById('carcassSupplier')?.value || 'holike';
+
+    // Resolve rates through 3-tier hierarchy (Global → Quote)
+    const shippingRate = quote?.overrides?.shippingRate ?? globalConfig.rates.shippingRate;
+    const installRate = quote?.overrides?.installRate ?? globalConfig.rates.installRate;
+    const drawerRate = quote?.overrides?.drawerRate ?? globalConfig.rates.drawerRate;
+    const accessoryRate = quote?.overrides?.accessoryRate ?? globalConfig.rates.accessoryRate;
+    const exchangeRate = quote?.overrides?.exchangeRate ?? globalConfig.rates.exchangeRate;
+
+    // Select markup rate based on project type (full house vs single project)
+    const globalMarkupRate = isFullHouse
+        ? (globalConfig.rates.markupRateFull ?? globalConfig.rates.markupRate ?? 80)
+        : (globalConfig.rates.markupRateSingle ?? globalConfig.rates.markupRate ?? 90);
+    const markupRate = (quote?.overrides?.markupRate ?? globalMarkupRate) / 100;
+
+    const discountRate = (quote?.overrides?.discountRate ?? globalConfig.rates.discountRate) / 100;
+
+    // Resolve dimensions through 3-tier hierarchy (Global → Quote)
+    const defaultUpperHt = quote?.overrides?.defaultUpperHt ?? globalConfig.dimensions.defaultUpperHt;
+    const defaultBaseHt = quote?.overrides?.defaultBaseHt ?? globalConfig.dimensions.defaultBaseHt;
+    const defaultUpperDp = quote?.overrides?.defaultUpperDp ?? globalConfig.dimensions.defaultUpperDp;
+    const defaultBaseDp = quote?.overrides?.defaultBaseDp ?? globalConfig.dimensions.defaultBaseDp;
+    const defaultPantryDp = quote?.overrides?.defaultPantryDp ?? globalConfig.dimensions.defaultPantryDp;
+
+    // Get material rates from global config
+    const carcassRates = globalConfig.materials.carcassRates;
+    const carcassRate = carcassSupplier === 'holike' ? carcassRates.holike : carcassRates.allure;
 
     return {
         projectType,
         isFullHouse,
-        carcassSupplier: getElementById('carcassSupplier').value,
-        carcassRate:
-            getElementById('carcassSupplier').value === 'holike'
-                ? CARCASS_RATES.holike
-                : CARCASS_RATES.allure,
+        carcassSupplier,
+        carcassRate,
         defaultCeiling,
         defaultCeilingMm: CEILING_TO_MM[defaultCeiling] || 2450,
-        shippingRate: parseFloat(getElementById('shippingRate').value) || 60,
-        installRate:
-            parseFloat(getElementById('installRate').value) ||
-            (isFullHouse ? 100 : 120),
-        drawerRate: parseFloat(getElementById('drawerRate').value) || 200,
-        accessoryRate:
-            parseFloat(getElementById('accessoryRate').value) || 300,
-        exchangeRate: parseFloat(getElementById('exchangeRate').value) || 1.42,
-        markupRate:
-            (parseFloat(getElementById('markupRate').value) || 80) / 100,
-        discountRate:
-            (parseFloat(getElementById('discountRate').value) || 50) / 100,
-        defaultUpperHt:
-            parseFloat(getElementById('defaultUpperHt').value) ||
-            CEILING_TO_UPPER_HT[defaultCeiling] ||
-            760,
-        defaultBaseHt: parseFloat(getElementById('defaultBaseHt').value) || 920,
-        defaultUpperDp:
-            parseFloat(getElementById('defaultUpperDp').value) || 300,
-        defaultBaseDp: parseFloat(getElementById('defaultBaseDp').value) || 600,
-        defaultPantryDp:
-            parseFloat(getElementById('defaultPantryDp').value) || 600
+        shippingRate,
+        installRate,
+        drawerRate,
+        accessoryRate,
+        exchangeRate,
+        markupRate,
+        discountRate,
+        defaultUpperHt,
+        defaultBaseHt,
+        defaultUpperDp,
+        defaultBaseDp,
+        defaultPantryDp,
+        carcassRates
     };
 }
 
 /**
- * Get effective dimensions for a line item (considering overrides)
+ * Get effective dimensions for a line item (with 3-tier resolution)
  * @param {Object} item - Line item
  * @returns {Object} Effective dimensions
  */
 export function getEffectiveDimensions(item) {
     const settings = getProjectSettings();
-    const ceilingFt = item.ceilingFt || settings.defaultCeiling;
+
+    // Helper to get dimension override (new nested or old flat structure)
+    const getDimOverride = (newPath, oldPath) => {
+        // Try new nested structure first
+        if (item.overrides?.dimensions?.[newPath]) {
+            return item.overrides.dimensions[newPath];
+        }
+        // Fall back to old flat structure
+        if (item[oldPath]) {
+            return item[oldPath];
+        }
+        return null;
+    };
+
+    // Ceiling height (affects upper cabinet height)
+    const ceilingFt = getDimOverride('ceilingFt', 'ceilingFt') || settings.defaultCeiling;
     const ceilingMm = CEILING_TO_MM[ceilingFt] || settings.defaultCeilingMm;
     const baseUpperHt = CEILING_TO_UPPER_HT[ceilingFt] || settings.defaultUpperHt;
 
-    const upperHt =
-        item.showOverride && item.upperHt ? item.upperHt : baseUpperHt;
-    const baseHt =
-        item.showOverride && item.baseHt ? item.baseHt : settings.defaultBaseHt;
-    const upperDp =
-        item.showOverride && item.upperDp ? item.upperDp : settings.defaultUpperDp;
-    const baseDp =
-        item.showOverride && item.baseDp ? item.baseDp : settings.defaultBaseDp;
-    const pantryDp =
-        item.showOverride && item.pantryDp
-            ? item.pantryDp
-            : settings.defaultPantryDp;
+    // Individual dimension overrides
+    const upperHt = getDimOverride('upperHt', 'upperHt') || baseUpperHt;
+    const baseHt = getDimOverride('baseHt', 'baseHt') || settings.defaultBaseHt;
+    const upperDp = getDimOverride('upperDp', 'upperDp') || settings.defaultUpperDp;
+    const baseDp = getDimOverride('baseDp', 'baseDp') || settings.defaultBaseDp;
+    const pantryDp = getDimOverride('pantryDp', 'pantryDp') || settings.defaultPantryDp;
 
+    // Carcass supplier (not a dimension but related)
     const carcassSupplier = item.carcassSupplier || settings.carcassSupplier;
     const carcassRate =
-        carcassSupplier === 'holike' ? CARCASS_RATES.holike : CARCASS_RATES.allure;
+        carcassSupplier === 'holike'
+            ? settings.carcassRates.holike
+            : settings.carcassRates.allure;
 
     return {
         ceilingFt,
@@ -99,6 +175,45 @@ export function getEffectiveDimensions(item) {
 }
 
 /**
+ * Get effective rates for a line item (with 3-tier resolution)
+ * @param {Object} item - Line item
+ * @returns {Object} Effective rates
+ */
+export function getEffectiveRates(item) {
+    const settings = getProjectSettings();
+
+    // Use new nested structure: item.overrides.rates.shippingRate
+    // Fall back to old flat structure for backward compatibility during migration
+    const getLineItemOverride = (newPath, oldPath) => {
+        // Try new nested structure first
+        if (item.overrides?.rates?.[newPath] !== null && item.overrides?.rates?.[newPath] !== undefined) {
+            return item.overrides.rates[newPath];
+        }
+        // Fall back to old flat structure
+        if (item[oldPath] !== null && item[oldPath] !== undefined) {
+            return item[oldPath];
+        }
+        return null;
+    };
+
+    const shippingOverride = getLineItemOverride('shippingRate', 'overrideShippingRate');
+    const installOverride = getLineItemOverride('installRate', 'overrideInstallRate');
+    const drawerOverride = getLineItemOverride('drawerRate', 'overrideDrawerRate');
+    const accessoryOverride = getLineItemOverride('accessoryRate', 'overrideAccessoryRate');
+    const markupOverride = getLineItemOverride('markupRate', 'overrideMarkupRate');
+    const discountOverride = getLineItemOverride('discountRate', 'overrideDiscountRate');
+
+    return {
+        shippingRate: shippingOverride !== null ? parseFloat(shippingOverride) : settings.shippingRate,
+        installRate: installOverride !== null ? parseFloat(installOverride) : settings.installRate,
+        drawerRate: drawerOverride !== null ? parseFloat(drawerOverride) : settings.drawerRate,
+        accessoryRate: accessoryOverride !== null ? parseFloat(accessoryOverride) : settings.accessoryRate,
+        markupRate: markupOverride !== null ? parseFloat(markupOverride) / 100 : settings.markupRate,
+        discountRate: discountOverride !== null ? parseFloat(discountOverride) / 100 : settings.discountRate
+    };
+}
+
+/**
  * Calculate total carcass surface area
  * Formula: (2 × sides) + (2 × back/bottom) + (1 × front face)
  * @param {Object} dims - Dimensions object
@@ -108,23 +223,26 @@ export function getEffectiveDimensions(item) {
  * @returns {number} Total carcass area in square meters
  */
 function calculateCarcassArea(dims, upperM, baseM, pantryM) {
-    // Upper cabinets
-    const upperArea =
-        2 * (dims.upperHt / 1000) * (dims.upperDp / 1000) + // Two sides
-        2 * upperM * (dims.upperDp / 1000) + // Back and bottom
-        upperM * (dims.upperHt / 1000); // Front face
+    // Upper cabinets - only calculate if there's actual length
+    const upperArea = upperM > 0
+        ? 2 * (dims.upperHt / 1000) * (dims.upperDp / 1000) + // Two sides
+          2 * upperM * (dims.upperDp / 1000) + // Back and bottom
+          upperM * (dims.upperHt / 1000) // Front face
+        : 0;
 
-    // Base cabinets
-    const baseArea =
-        2 * (dims.baseHt / 1000) * (dims.baseDp / 1000) +
-        2 * baseM * (dims.baseDp / 1000) +
-        baseM * (dims.baseHt / 1000);
+    // Base cabinets - only calculate if there's actual length
+    const baseArea = baseM > 0
+        ? 2 * (dims.baseHt / 1000) * (dims.baseDp / 1000) +
+          2 * baseM * (dims.baseDp / 1000) +
+          baseM * (dims.baseHt / 1000)
+        : 0;
 
-    // Pantry cabinets
-    const pantryArea =
-        2 * (dims.ceilingMm / 1000) * (dims.pantryDp / 1000) +
-        2 * pantryM * (dims.pantryDp / 1000) +
-        pantryM * (dims.ceilingMm / 1000);
+    // Pantry cabinets - only calculate if there's actual length
+    const pantryArea = pantryM > 0
+        ? 2 * (dims.ceilingMm / 1000) * (dims.pantryDp / 1000) +
+          2 * pantryM * (dims.pantryDp / 1000) +
+          pantryM * (dims.ceilingMm / 1000)
+        : 0;
 
     return upperArea + baseArea + pantryArea;
 }
@@ -137,6 +255,7 @@ function calculateCarcassArea(dims, upperM, baseM, pantryM) {
 export function calculateLineItem(item) {
     const settings = getProjectSettings();
     const dims = getEffectiveDimensions(item);
+    const rates = getEffectiveRates(item);
 
     // Convert linear feet to meters
     const upperM = (item.upperLF || 0) * CONVERSION.FEET_TO_METERS;
@@ -157,49 +276,94 @@ export function calculateLineItem(item) {
     const finish = item.finish || 'PVC';
     const shaped = item.shaped === 'yes';
     const openShelf = item.openShelf === 'yes';
+    const finishRates = getFinishRates();
 
     const doorRate = openShelf
         ? 0
-        : FINISH_RATES[finish]
+        : finishRates[finish]
         ? shaped
-            ? FINISH_RATES[finish].shaped
-            : FINISH_RATES[finish].unshaped
+            ? finishRates[finish].shaped
+            : finishRates[finish].unshaped
         : 100;
 
     // Calculate component costs (in USD)
     const doorCost = doorArea * doorRate;
     const carcassCost = carcassArea * dims.carcassRate;
-    const drawerCost = (item.drawers || 0) * settings.drawerRate;
-    const accessoryCost = (item.accessories || 0) * settings.accessoryRate;
+    const drawerCost = (item.drawers || 0) * rates.drawerRate;
+    const accessoryCost = (item.accessories || 0) * rates.accessoryRate;
 
     // Calculate gross cabinetry cost (USD)
     const cabinetryGross = doorCost + carcassCost + drawerCost + accessoryCost;
 
     // Apply discount (USD)
-    const cabinetryUSD = cabinetryGross * (1 - settings.discountRate);
+    const cabinetryUSD = cabinetryGross * (1 - rates.discountRate);
 
-    // Convert cabinetry from USD to CAD
+    // Calculate additional items total (CAD)
+    const additionalTotal = (item.additionalItems || []).reduce(
+        (sum, additional) => sum + (parseFloat(additional.price) || 0),
+        0
+    );
+
+    // Convert cabinetry from USD to CAD and add additional items
     // (shipping and install are already in CAD)
-    const cabinetry = cabinetryUSD * settings.exchangeRate;
+    const cabinetry = (cabinetryUSD * settings.exchangeRate) + additionalTotal;
 
     // Calculate shipping and installation (CAD)
-    const shipping = totalLF * settings.shippingRate;
-    const install = totalLF * settings.installRate;
+    const shipping = totalLF * rates.shippingRate;
+    const install = totalLF * rates.installRate;
 
     // Calculate subtotal (CAD)
     const subtotal = cabinetry + shipping + install;
 
     // Apply markup for final price (CAD)
-    const finalPrice = subtotal * (1 + settings.markupRate);
+    const finalPrice = subtotal * (1 + rates.markupRate);
+
+    // Create breakdown object for transparency
+    const breakdown = {
+        // Conversions
+        upperM,
+        baseM,
+        pantryM,
+        // Areas
+        doorArea,
+        carcassArea,
+        // Component costs (USD)
+        doorRate,
+        doorCost,
+        carcassCost,
+        drawerCost,
+        accessoryCost,
+        // Subtotals
+        cabinetryGross,
+        cabinetryUSD,
+        additionalTotal,
+        // Rates applied
+        ratesUsed: rates,
+        exchangeRate: settings.exchangeRate,
+        // Item metadata for display
+        itemData: {
+            upperLF: item.upperLF || 0,
+            baseLF: item.baseLF || 0,
+            pantryLF: item.pantryLF || 0,
+            drawers: item.drawers || 0,
+            accessories: item.accessories || 0,
+            finish,
+            shaped,
+            openShelf,
+            additionalItems: item.additionalItems || []
+        }
+    };
 
     return {
         totalLF,
         cabinetry,
         shipping,
         install,
+        additionalTotal,
         subtotal,
         finalPrice,
-        dims
+        dims,
+        breakdown
     };
 }
 

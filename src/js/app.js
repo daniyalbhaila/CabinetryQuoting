@@ -10,7 +10,9 @@ import {
     loadQuoteData,
     getFormData,
     renderQuoteHistory,
-    handleProjectTypeChange
+    handleProjectTypeChange,
+    loadQuoteOverrides,
+    getQuoteOverrides
 } from './components/quoteForm.js';
 import {
     initLineItems,
@@ -18,6 +20,7 @@ import {
     updateLineItemDOM
 } from './components/lineItems.js';
 import { updateQuoteSummary } from './components/quoteSummary.js';
+import { initBreakdown } from './components/breakdown.js';
 import { saveCurrentQuote, loadCurrentQuote } from './services/storage.js';
 import { calculateLineItem } from './services/calculator.js';
 import { validateLinearFeet, validateCount } from './utils/validation.js';
@@ -31,7 +34,9 @@ class QuoteApp {
     constructor() {
         this.lineItems = [];
         this.nextId = 1;
+        this.quoteOverrides = {}; // Quote-level overrides (3-tier system)
         this.debounceTimeout = null;
+        this.recalculateTimeout = null;
     }
 
     /**
@@ -47,12 +52,13 @@ class QuoteApp {
      */
     onAuthSuccess() {
         // Initialize all components
-        initModals(() => this.recalculateAll());
+        initModals(() => this.debouncedRecalculate());
         initQuoteForm(
             () => this.debouncedSave(),
             (quote) => this.loadQuote(quote)
         );
         initLineItems(() => this.debouncedSave());
+        initBreakdown();
 
         // Setup additional listeners
         this.setupEventListeners();
@@ -96,7 +102,9 @@ class QuoteApp {
         if (saved) {
             this.lineItems = saved.lineItems || [];
             this.nextId = saved.nextId || 1;
+            this.quoteOverrides = saved.overrides || {};
             loadQuoteData(saved);
+            loadQuoteOverrides(saved); // Load quote-level overrides
 
             // Update ceiling display
             updateCeilingDisplay(saved.defaultCeiling || '8');
@@ -111,6 +119,7 @@ class QuoteApp {
             // Set default date
             setValue('quoteDate', getCurrentDate());
             updateCeilingDisplay('8');
+            loadQuoteOverrides(null); // Initialize with empty overrides
         }
     }
 
@@ -123,9 +132,11 @@ class QuoteApp {
             // New quote
             this.lineItems = [];
             this.nextId = 1;
+            this.quoteOverrides = {};
             setValue('clientName', '');
             setValue('projectName', '');
             setValue('quoteDate', getCurrentDate());
+            loadQuoteOverrides(null); // Clear quote overrides
             renderLineItems(
                 this.lineItems,
                 (id, field, value) => this.updateLineItem(id, field, value),
@@ -140,7 +151,9 @@ class QuoteApp {
         // Load existing quote
         this.lineItems = quote.lineItems || [];
         this.nextId = quote.nextId || 1;
+        this.quoteOverrides = quote.overrides || {};
         loadQuoteData(quote);
+        loadQuoteOverrides(quote); // Load quote-level overrides
 
         updateCeilingDisplay(quote.defaultCeiling || '8');
 
@@ -179,7 +192,17 @@ class QuoteApp {
             baseDp: 0,
             pantryDp: 0,
             showOverride: false,
-            collapsed: false
+            showAdvanced: false, // New: controls Advanced section visibility
+            collapsed: false,
+            // Config override fields
+            showConfigOverride: false,
+            overrideShippingRate: null,
+            overrideInstallRate: null,
+            overrideDrawerRate: null,
+            overrideAccessoryRate: null,
+            overrideMarkupRate: null,
+            overrideDiscountRate: null,
+            additionalItems: []
         });
 
         renderLineItems(
@@ -229,12 +252,23 @@ class QuoteApp {
             'pantryDp'
         ];
         const countFields = ['drawers', 'accessories'];
+        const overrideFields = [
+            'overrideShippingRate',
+            'overrideInstallRate',
+            'overrideDrawerRate',
+            'overrideAccessoryRate',
+            'overrideMarkupRate',
+            'overrideDiscountRate'
+        ];
 
         if (numericFields.includes(field)) {
             item[field] =
                 value === '' ? 0 : validateLinearFeet(value);
         } else if (countFields.includes(field)) {
             item[field] = validateCount(value);
+        } else if (overrideFields.includes(field)) {
+            // Override fields: empty = null (use default), otherwise validate
+            item[field] = value === '' ? null : validateLinearFeet(value);
         } else {
             item[field] = value;
         }
@@ -265,8 +299,13 @@ class QuoteApp {
     saveState() {
         const formData = getFormData();
 
+        // Get current quote-level overrides from form
+        this.quoteOverrides = getQuoteOverrides();
+
         const quoteData = {
+            version: 2, // Mark as v2 format (3-tier system)
             ...formData,
+            overrides: this.quoteOverrides, // Quote-level overrides
             lineItems: this.lineItems,
             nextId: this.nextId
         };
@@ -282,6 +321,16 @@ class QuoteApp {
         this.debounceTimeout = setTimeout(() => {
             this.saveState();
         }, 500);
+    }
+
+    /**
+     * Debounced recalculate to avoid excessive re-renders
+     */
+    debouncedRecalculate() {
+        clearTimeout(this.recalculateTimeout);
+        this.recalculateTimeout = setTimeout(() => {
+            this.recalculateAll();
+        }, 150); // Shorter delay for more responsive UI
     }
 }
 

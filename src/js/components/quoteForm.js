@@ -9,7 +9,8 @@ import {
     saveQuoteToHistory,
     getSavedQuotes,
     getQuoteById,
-    deleteQuoteFromHistory
+    deleteQuoteFromHistory,
+    ensureGlobalConfig
 } from '../services/storage.js';
 
 /**
@@ -21,6 +22,7 @@ export function initQuoteForm(onFormChange, onQuoteLoad) {
     setupFormListeners(onFormChange);
     setupQuoteHistoryListeners(onQuoteLoad);
     setupCardToggles();
+    setupQuoteSettingsCard(onFormChange);
 }
 
 /**
@@ -168,7 +170,9 @@ function handleSaveQuote(onComplete) {
         const nextId = window.quoteApp ? window.quoteApp.nextId : 1;
 
         const success = saveQuoteToHistory(quoteName, {
+            version: 2,
             ...formData,
+            overrides: getQuoteOverrides(),
             lineItems,
             nextId
         });
@@ -261,4 +265,196 @@ export function handleProjectTypeChange(onUpdate) {
     const installRate = projectType === 'full' ? 100 : 120;
     setValue('installRate', installRate);
     if (onUpdate) onUpdate();
+}
+
+// =============================================================================
+// QUOTE SETTINGS CARD (3-Tier System - Quote Level)
+// =============================================================================
+
+/**
+ * Setup quote settings card
+ * @param {Function} onOverrideChange - Callback when override changes
+ */
+function setupQuoteSettingsCard(onOverrideChange) {
+    // Initialize with global defaults displayed
+    updateQuoteSettingsDisplay();
+
+    // Setup toggle functionality
+    const toggle = getElementById('quoteOverrideToggle');
+    const content = getElementById('quoteOverrideContent');
+    if (toggle && content) {
+        toggle.addEventListener('click', () => {
+            toggle.classList.toggle('active');
+            content.classList.toggle('show');
+        });
+    }
+
+    // Setup input listeners for quote overrides
+    const overrideInputs = [
+        'quoteShippingRate',
+        'quoteInstallRate',
+        'quoteDrawerRate',
+        'quoteAccessoryRate',
+        'quoteMarkupRate',
+        'quoteDiscountRate',
+        'quoteDefaultUpperHt',
+        'quoteDefaultBaseHt'
+    ];
+
+    overrideInputs.forEach(inputId => {
+        const input = getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', () => {
+                updateQuoteSettingsDisplay();
+                if (onOverrideChange) onOverrideChange();
+            });
+        }
+    });
+
+    // Setup reset button
+    const resetBtn = getElementById('resetQuoteOverridesBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Reset all quote settings to global defaults?')) {
+                resetQuoteOverrides();
+                updateQuoteSettingsDisplay();
+                if (onOverrideChange) onOverrideChange();
+            }
+        });
+    }
+}
+
+/**
+ * Load quote overrides into the form
+ * @param {Object} quoteData - Quote data with optional overrides
+ */
+export function loadQuoteOverrides(quoteData) {
+    if (!quoteData || !quoteData.overrides) {
+        // No overrides, clear all inputs
+        resetQuoteOverrides();
+        return;
+    }
+
+    const overrides = quoteData.overrides;
+
+    // Load rate overrides (if they exist)
+    if (overrides.shippingRate != null) setValue('quoteShippingRate', overrides.shippingRate);
+    if (overrides.installRate != null) setValue('quoteInstallRate', overrides.installRate);
+    if (overrides.drawerRate != null) setValue('quoteDrawerRate', overrides.drawerRate);
+    if (overrides.accessoryRate != null) setValue('quoteAccessoryRate', overrides.accessoryRate);
+    if (overrides.markupRate != null) setValue('quoteMarkupRate', overrides.markupRate);
+    if (overrides.discountRate != null) setValue('quoteDiscountRate', overrides.discountRate);
+
+    // Load dimension overrides (if they exist)
+    if (overrides.defaultUpperHt != null) setValue('quoteDefaultUpperHt', overrides.defaultUpperHt);
+    if (overrides.defaultBaseHt != null) setValue('quoteDefaultBaseHt', overrides.defaultBaseHt);
+
+    updateQuoteSettingsDisplay();
+}
+
+/**
+ * Get quote overrides from form (only non-empty values)
+ * @returns {Object} Quote overrides object
+ */
+export function getQuoteOverrides() {
+    const overrides = {};
+
+    // Rate overrides
+    const shippingRate = getElementById('quoteShippingRate')?.value;
+    if (shippingRate !== '') overrides.shippingRate = parseFloat(shippingRate);
+
+    const installRate = getElementById('quoteInstallRate')?.value;
+    if (installRate !== '') overrides.installRate = parseFloat(installRate);
+
+    const drawerRate = getElementById('quoteDrawerRate')?.value;
+    if (drawerRate !== '') overrides.drawerRate = parseFloat(drawerRate);
+
+    const accessoryRate = getElementById('quoteAccessoryRate')?.value;
+    if (accessoryRate !== '') overrides.accessoryRate = parseFloat(accessoryRate);
+
+    const markupRate = getElementById('quoteMarkupRate')?.value;
+    if (markupRate !== '') overrides.markupRate = parseFloat(markupRate);
+
+    const discountRate = getElementById('quoteDiscountRate')?.value;
+    if (discountRate !== '') overrides.discountRate = parseFloat(discountRate);
+
+    // Dimension overrides
+    const upperHt = getElementById('quoteDefaultUpperHt')?.value;
+    if (upperHt !== '') overrides.defaultUpperHt = parseFloat(upperHt);
+
+    const baseHt = getElementById('quoteDefaultBaseHt')?.value;
+    if (baseHt !== '') overrides.defaultBaseHt = parseFloat(baseHt);
+
+    return overrides;
+}
+
+/**
+ * Reset all quote overrides to empty (use global)
+ */
+function resetQuoteOverrides() {
+    setValue('quoteShippingRate', '');
+    setValue('quoteInstallRate', '');
+    setValue('quoteDrawerRate', '');
+    setValue('quoteAccessoryRate', '');
+    setValue('quoteMarkupRate', '');
+    setValue('quoteDiscountRate', '');
+    setValue('quoteDefaultUpperHt', '');
+    setValue('quoteDefaultBaseHt', '');
+}
+
+/**
+ * Update quote settings display (badge and source indicators)
+ */
+function updateQuoteSettingsDisplay() {
+    const globalConfig = ensureGlobalConfig();
+    const overrides = getQuoteOverrides();
+    const overrideCount = Object.keys(overrides).length;
+
+    // Update badge
+    const badge = getElementById('quoteSettingsBadge');
+    if (badge) {
+        if (overrideCount > 0) {
+            badge.classList.add('has-overrides');
+            badge.textContent = `${overrideCount} Custom`;
+        } else {
+            badge.classList.remove('has-overrides');
+            badge.textContent = `Global`;
+        }
+    }
+
+    // Update source indicators for rates
+    updateSourceIndicator('shippingSource', 'quoteShippingRate', globalConfig.rates.shippingRate, 'Shipping');
+    updateSourceIndicator('installSource', 'quoteInstallRate', globalConfig.rates.installRate, 'Install');
+    updateSourceIndicator('drawerSource', 'quoteDrawerRate', globalConfig.rates.drawerRate, 'Drawer');
+    updateSourceIndicator('accessorySource', 'quoteAccessoryRate', globalConfig.rates.accessoryRate, 'Accessory');
+    updateSourceIndicator('markupSource', 'quoteMarkupRate', globalConfig.rates.markupRate, 'Markup');
+    updateSourceIndicator('discountSource', 'quoteDiscountRate', globalConfig.rates.discountRate, 'Discount');
+
+    // Update source indicators for dimensions
+    updateSourceIndicator('upperHtSource', 'quoteDefaultUpperHt', globalConfig.dimensions.defaultUpperHt, 'Upper Ht');
+    updateSourceIndicator('baseHtSource', 'quoteDefaultBaseHt', globalConfig.dimensions.defaultBaseHt, 'Base Ht');
+}
+
+/**
+ * Update a single source indicator
+ * @param {string} sourceId - ID of the source indicator element
+ * @param {string} inputId - ID of the input element
+ * @param {number} globalValue - Global default value
+ * @param {string} label - Label for the setting
+ */
+function updateSourceIndicator(sourceId, inputId, globalValue, label) {
+    const sourceEl = getElementById(sourceId);
+    const inputEl = getElementById(inputId);
+
+    if (!sourceEl || !inputEl) return;
+
+    const hasOverride = inputEl.value !== '';
+
+    if (hasOverride) {
+        sourceEl.className = 'setting-source custom';
+        sourceEl.textContent = `Custom for this quote`;
+    } else {
+        sourceEl.className = 'setting-source';
+        sourceEl.textContent = `Global: ${globalValue}`;
+    }
 }

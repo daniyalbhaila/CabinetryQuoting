@@ -3,7 +3,7 @@
  * Handles all localStorage operations with error handling
  */
 
-import { STORAGE_KEYS } from '../utils/constants.js';
+import { STORAGE_KEYS, FACTORY_DEFAULTS } from '../utils/constants.js';
 import { getCurrentDate } from '../utils/formatting.js';
 import { isLocalStorageAvailable } from '../utils/validation.js';
 
@@ -186,4 +186,195 @@ export function getStorageStats() {
         quotesCount: quotes.length,
         estimatedSize: estimatedSize.toFixed(2) + ' KB'
     };
+}
+
+// =============================================================================
+// GLOBAL CONFIGURATION (3-Tier System)
+// =============================================================================
+
+/**
+ * Load global configuration from localStorage
+ * @returns {Object|null} Global config or null
+ */
+export function loadGlobalConfig() {
+    return loadFromStorage(STORAGE_KEYS.GLOBAL_CONFIG);
+}
+
+/**
+ * Save global configuration to localStorage
+ * @param {Object} config - Global configuration object
+ * @returns {boolean} Success status
+ */
+export function saveGlobalConfig(config) {
+    const configWithTimestamp = {
+        ...config,
+        lastUpdated: new Date().toISOString()
+    };
+    return saveToStorage(STORAGE_KEYS.GLOBAL_CONFIG, configWithTimestamp);
+}
+
+/**
+ * Ensure global config exists, create from factory defaults if not
+ * @returns {Object} Global configuration
+ */
+export function ensureGlobalConfig() {
+    const existing = loadGlobalConfig();
+    if (existing) {
+        return existing;
+    }
+
+    // Create from factory defaults
+    const factoryDefaults = {
+        ...FACTORY_DEFAULTS,
+        lastUpdated: new Date().toISOString()
+    };
+    saveGlobalConfig(factoryDefaults);
+    return factoryDefaults;
+}
+
+/**
+ * Reset global config to factory defaults
+ * @returns {boolean} Success status
+ */
+export function resetGlobalConfig() {
+    return saveGlobalConfig(FACTORY_DEFAULTS);
+}
+
+// =============================================================================
+// MIGRATION LOGIC (v1 → v2)
+// =============================================================================
+
+/**
+ * Migrate a v1 quote to v2 structure (with 3-tier overrides)
+ * @param {Object} oldQuote - Quote in v1 format
+ * @returns {Object} Quote in v2 format
+ */
+export function migrateQuoteToV2(oldQuote) {
+    if (oldQuote.version === 2) {
+        return oldQuote; // Already migrated
+    }
+
+    // Extract quote-level overrides from old structure
+    // (In v1, these were stored directly on the quote)
+    const quoteOverrides = {
+        shippingRate: oldQuote.shippingRate ?? null,
+        installRate: oldQuote.installRate ?? null,
+        drawerRate: oldQuote.drawerRate ?? null,
+        accessoryRate: oldQuote.accessoryRate ?? null,
+        markupRate: oldQuote.markupRate ?? null,
+        discountRate: oldQuote.discountRate ?? null,
+        exchangeRate: oldQuote.exchangeRate ?? null,
+        defaultUpperHt: oldQuote.defaultUpperHt ?? null,
+        defaultBaseHt: oldQuote.defaultBaseHt ?? null,
+        defaultUpperDp: oldQuote.defaultUpperDp ?? null,
+        defaultBaseDp: oldQuote.defaultBaseDp ?? null,
+        defaultPantryDp: oldQuote.defaultPantryDp ?? null
+    };
+
+    // Clean nulls (only keep actual overrides)
+    Object.keys(quoteOverrides).forEach(key => {
+        if (quoteOverrides[key] === null || quoteOverrides[key] === undefined) {
+            delete quoteOverrides[key];
+        }
+    });
+
+    // Migrate line items to nested structure
+    const newLineItems = (oldQuote.lineItems || []).map(item => {
+        // Extract dimension overrides
+        const dimensionOverrides = {
+            ceilingFt: item.ceilingFt || null,
+            upperHt: item.upperHt || null,
+            baseHt: item.baseHt || null,
+            upperDp: item.upperDp || null,
+            baseDp: item.baseDp || null,
+            pantryDp: item.pantryDp || null
+        };
+
+        // Extract rate overrides
+        const rateOverrides = {
+            shippingRate: item.overrideShippingRate ?? null,
+            installRate: item.overrideInstallRate ?? null,
+            drawerRate: item.overrideDrawerRate ?? null,
+            accessoryRate: item.overrideAccessoryRate ?? null,
+            markupRate: item.overrideMarkupRate ?? null,
+            discountRate: item.overrideDiscountRate ?? null
+        };
+
+        // Create new structure
+        const newItem = {
+            ...item,
+            overrides: {
+                dimensions: dimensionOverrides,
+                rates: rateOverrides
+            },
+            showAdvanced: false // Default to collapsed
+        };
+
+        // Remove old flat fields
+        delete newItem.ceilingFt;
+        delete newItem.upperHt;
+        delete newItem.baseHt;
+        delete newItem.upperDp;
+        delete newItem.baseDp;
+        delete newItem.pantryDp;
+        delete newItem.overrideShippingRate;
+        delete newItem.overrideInstallRate;
+        delete newItem.overrideDrawerRate;
+        delete newItem.overrideAccessoryRate;
+        delete newItem.overrideMarkupRate;
+        delete newItem.overrideDiscountRate;
+        delete newItem.showOverride;
+        delete newItem.showConfigOverride;
+
+        return newItem;
+    });
+
+    return {
+        ...oldQuote,
+        version: 2,
+        overrides: Object.keys(quoteOverrides).length > 0 ? quoteOverrides : {},
+        lineItems: newLineItems
+    };
+}
+
+/**
+ * Migrate all saved quotes to v2
+ * @returns {boolean} Success status
+ */
+export function migrateAllQuotesToV2() {
+    const quotes = getSavedQuotes();
+    const migratedQuotes = quotes.map(q => migrateQuoteToV2(q));
+    return saveToStorage(STORAGE_KEYS.SAVED_QUOTES, migratedQuotes);
+}
+
+/**
+ * Resolve a setting value through the 3-tier hierarchy
+ * @param {string} settingKey - The setting to resolve (e.g., 'shippingRate')
+ * @param {Object} lineItem - Line item with potential override
+ * @param {Object} quote - Quote with potential override
+ * @param {Object} globalConfig - Global configuration
+ * @param {string} tier - 'rates' or 'dimensions'
+ * @returns {*} Resolved value
+ */
+export function resolveSetting(settingKey, lineItem, quote, globalConfig, tier = 'rates') {
+    // Tier 3: Line item override
+    if (lineItem?.overrides?.[tier]?.[settingKey] !== null &&
+        lineItem?.overrides?.[tier]?.[settingKey] !== undefined) {
+        return lineItem.overrides[tier][settingKey];
+    }
+
+    // Tier 2: Quote-level override
+    if (quote?.overrides?.[settingKey] !== null &&
+        quote?.overrides?.[settingKey] !== undefined) {
+        return quote.overrides[settingKey];
+    }
+
+    // Tier 1: Global default
+    if (tier === 'rates') {
+        return globalConfig.rates[settingKey];
+    } else if (tier === 'dimensions') {
+        return globalConfig.dimensions[settingKey];
+    }
+
+    return null;
 }

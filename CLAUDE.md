@@ -12,6 +12,14 @@ This is a single-page application (SPA) for generating custom cabinetry quotes. 
 - localStorage/sessionStorage APIs
 - No frameworks or build tools required
 
+**Version 3.0 Key Features:**
+- **3-Tier Configuration System**: Global defaults → Quote overrides → Line item overrides
+- **Progressive Disclosure UI**: Basic (always visible, 3 columns) + Advanced (collapsed) sections
+- **Cascading Resolution**: Settings cascade from global to quote to line item level
+- **Project-Type-Specific Rates**: Different markup/install rates for full house vs single project
+- **Visual Hierarchy**: Clear indicators showing which tier is being used
+- **Smart Defaults**: Markup rate auto-selects based on project type unless overridden
+
 ## Architecture
 
 ### Modular File Structure
@@ -28,14 +36,15 @@ quotingTool/
 │   │   │
 │   │   ├── components/          # UI components
 │   │   │   ├── auth.js          # Password authentication
-│   │   │   ├── modals.js        # Help and Config modals
-│   │   │   ├── quoteForm.js     # Client info, project settings, quote history
-│   │   │   ├── lineItems.js     # Line item rendering and management
-│   │   │   └── quoteSummary.js  # Quote totals display
+│   │   │   ├── modals.js        # Help and Global Settings modals
+│   │   │   ├── quoteForm.js     # Client info, project settings, quote history, quote-level overrides
+│   │   │   ├── lineItems.js     # Line item rendering with Basic/Advanced sections
+│   │   │   ├── quoteSummary.js  # Quote totals display
+│   │   │   └── breakdown.js     # Calculation breakdown modal
 │   │   │
 │   │   ├── services/            # Business logic
-│   │   │   ├── calculator.js    # Pricing calculations
-│   │   │   └── storage.js       # localStorage/sessionStorage operations
+│   │   │   ├── calculator.js    # Pricing calculations with 3-tier resolution
+│   │   │   └── storage.js       # localStorage/sessionStorage + global config management
 │   │   │
 │   │   └── utils/               # Utilities
 │   │       ├── constants.js     # All constants (rates, conversions, etc.)
@@ -59,39 +68,88 @@ quotingTool/
 - Implements debounced auto-save
 - Exposed as `window.quoteApp` for component callbacks
 
-#### **services/calculator.js** - Core Calculation Logic
-`calculateLineItem(item)` function:
-1. Converts linear feet to meters (1 LF = 0.3048m)
-2. Calculates door area based on cabinet heights and linear footage
-3. Calculates carcass (box) surface area
-4. Applies finish rates (shaped vs unshaped doors)
-5. Adds drawer and accessory costs
-6. Applies discount to cabinetry costs
-7. **Converts USD pricing to CAD** using exchange rate
-8. Adds shipping and installation (per LF, already in CAD)
-9. Applies markup percentage to get final price
+#### **services/calculator.js** - Core Calculation Logic with 3-Tier Resolution
+Key functions:
+- `getProjectSettings()` - Resolves quote-level and global settings (TIER 1 & 2)
+- `getEffectiveDimensions(item)` - Resolves dimensions through 3 tiers
+- `getEffectiveRates(item)` - Resolves rates through 3 tiers
+- `calculateLineItem(item)` - Main calculation using resolved settings
+
+Calculation steps:
+1. Resolve all settings through 3-tier cascade (line item → quote → global)
+2. Convert linear feet to meters (1 LF = 0.3048m)
+3. Calculate door area based on cabinet heights and linear footage
+4. Calculate carcass (box) surface area **only if LF > 0** (v3.0 fix)
+5. Apply finish rates (shaped vs unshaped doors, or 0 for open shelf)
+6. Add drawer and accessory costs
+7. Apply discount to cabinetry costs
+8. **Convert USD pricing to CAD** using exchange rate
+9. Add shipping and installation (per LF, already in CAD)
+10. Add additional items (already in CAD)
+11. Apply markup percentage to get final price
 
 **Important**: Cabinetry pricing is in USD and gets converted to CAD, but shipping and installation are already in CAD.
 
-#### **services/storage.js** - Data Persistence
-- `saveCurrentQuote()` - Auto-save current working quote
+#### **services/storage.js** - Data Persistence + Global Config Management
+Quote operations:
+- `saveCurrentQuote()` - Auto-save current working quote (v2 schema with overrides)
 - `loadCurrentQuote()` - Load last working quote
 - `saveQuoteToHistory()` - Save named quote to history
 - `getSavedQuotes()` - Get all saved quotes
-- Error handling for QuotaExceededError and SecurityError
 
-#### **components/lineItems.js** - Line Item Management
+Global config operations (NEW in v3.0):
+- `loadGlobalConfig()` - Load global defaults from localStorage
+- `saveGlobalConfig(config)` - Save global defaults
+- `ensureGlobalConfig()` - Load or create global config with factory defaults
+- Auto-migration from v1/v2 quotes to v3 schema
+
+Error handling for QuotaExceededError and SecurityError
+
+#### **components/lineItems.js** - Line Item Management with Progressive Disclosure
+Rendering structure:
 - `renderLineItems()` - Full re-render of all line items
+- `renderLineItemBody()` - Splits into Basic and Advanced sections
+- `renderBasicSection()` - Always visible, 3 columns:
+  - `renderLinearFootageSection()` - Upper/Base/Pantry LF
+  - `renderFinishSection()` - Finish, Shaped, Open Shelf, Drawers, Accessories
+  - `renderRoomSettingsSection()` - Ceiling Height, Carcass Supplier (NEW in v3.0)
+- `renderAdvancedSection()` - Collapsed by default: Dimension Overrides, Pricing, Additional Items
 - `updateLineItemDOM()` - Partial update for performance
-- Attaches event listeners to line item inputs
-- Handles collapse/expand, override toggles, delete
 
-#### **utils/constants.js** - Configuration
+Event handling:
+- Uses event delegation on line items container
+- Handles: update, delete, toggle-collapse, toggle-override, toggle-advanced, toggle-config-override
+- Supports additional items (add/remove)
+
+#### **components/quoteForm.js** - Quote Management + Quote-Level Overrides
+Form operations:
+- Client info and project settings management
+- Quote history rendering and loading
+- Project type change handling (affects install rate)
+
+Quote-level override operations (NEW in v3.0):
+- `setupQuoteSettingsCard()` - Initializes quote override UI in Project Settings dropdown
+- `loadQuoteOverrides(quoteData)` - Loads quote overrides into form
+- `getQuoteOverrides()` - Extracts non-empty quote overrides from form
+- `resetQuoteOverrides()` - Clears all quote overrides
+- `updateQuoteSettingsDisplay()` - Updates visual indicators and badges
+
+#### **components/breakdown.js** - Calculation Breakdown Modal (NEW in v3.0)
+- Shows detailed step-by-step calculation for a line item
+- Displays metric conversions, area calculations, cost components
+- Visual breakdown of USD → CAD conversion, markup, etc.
+
+#### **utils/constants.js** - Factory Defaults Configuration
+Material rates (used in global config):
 - `FINISH_RATES` - Door finish pricing lookup table
+- `CARCASS_RATES` - Supplier pricing
+- `DEFAULT_RATES` - Factory defaults for shipping, install, drawer, accessory, exchange, markup, discount
+
+Dimension mappings:
 - `CEILING_TO_MM` - Ceiling height to millimeter conversions
 - `CEILING_TO_UPPER_HT` - Ceiling height to upper cabinet height mappings
-- `CARCASS_RATES` - Supplier pricing
-- `DEFAULT_RATES` - Shipping, install, drawer, accessory, exchange, markup, discount
+
+Storage keys:
 - `STORAGE_KEYS` - localStorage/sessionStorage key names
 
 ### State Management
@@ -99,32 +157,118 @@ quotingTool/
 **Data Flow:**
 1. User interacts with UI (inputs, buttons)
 2. Event listeners call `QuoteApp` methods
-3. `QuoteApp` updates `lineItems` array
+3. `QuoteApp` updates `lineItems` array and `quoteOverrides` object
 4. Components re-render affected parts
 5. `debouncedSave()` triggers after 500ms of inactivity
-6. `saveCurrentQuote()` writes to localStorage
+6. `saveCurrentQuote()` writes to localStorage (v2 schema with overrides)
 
 **Auto-save**: Debounced (500ms) to prevent excessive localStorage writes
 **Manual save**: User clicks "Save Quote" → prompts for name → adds to `bosco_saved_quotes` array
-**Quote loading**: Restores all form fields and line items from saved data
+**Quote loading**: Restores all form fields, line items, and overrides from saved data
+**Global config**: Persists separately in `bosco_global_config` and auto-initializes with factory defaults
 
-### Dimension Override System
+### 3-Tier Configuration System (v3.0)
 
-The app uses a cascading priority system for dimensions:
-1. **Line item override** (if enabled and value entered)
-2. **Project default** (from sidebar settings)
-3. **Hardcoded fallback** (system defaults in constants.js)
+The application uses a cascading resolution system with three tiers:
 
-When ceiling height changes, upper cabinet height auto-updates via `CEILING_TO_UPPER_HT` lookup.
+#### TIER 1: Global Defaults
+**Storage**: `localStorage: bosco_global_config`
+**Location**: Global Settings modal (header button)
+**Purpose**: Company-wide defaults for all new quotes
+**Schema**:
+```javascript
+{
+  version: 1,
+  rates: {
+    shippingRate,
+    installRate,
+    drawerRate,
+    accessoryRate,
+    exchangeRate,
+    markupRateFull,      // NEW: 80% for full house (default)
+    markupRateSingle,    // NEW: 90% for single project (default)
+    discountRate
+  },
+  dimensions: { defaultUpperHt, defaultBaseHt, defaultUpperDp, defaultBaseDp, defaultPantryDp },
+  materials: { finishRates, carcassRates }
+}
+```
+**Functions**: `loadGlobalConfig()`, `saveGlobalConfig()`, `ensureGlobalConfig()`
+**Auto-Selection**: Markup rate automatically chosen based on project type (full/single)
+
+#### TIER 2: Quote-Level Overrides
+**Storage**: Part of quote object in `bosco_current_quote` under `overrides` property
+**Location**: Project Settings card → "Custom Rates for This Quote" dropdown
+**Purpose**: Override global defaults for a specific quote (e.g., special client pricing)
+**Schema**:
+```javascript
+{
+  overrides: {
+    shippingRate: 75,        // Override (custom)
+    installRate: null,       // Not set (uses global)
+    drawerRate: 250,         // Override (custom)
+    // ... other rates/dimensions
+  }
+}
+```
+**Functions**: `getQuoteOverrides()`, `loadQuoteOverrides()`, `resetQuoteOverrides()`
+
+#### TIER 3: Line-Item Overrides
+**Storage**: Part of line item object in `lineItems` array
+**Location**: Line item → Advanced Settings → Pricing Overrides / Dimensions
+**Purpose**: Override settings for a specific room (e.g., bathroom has 9ft ceiling while rest is 8ft)
+**Schema**:
+```javascript
+{
+  overrideShippingRate: null,  // Not set (uses quote or global)
+  overrideMarkupRate: 90,      // Override (custom for this room)
+  ceilingFt: "9",             // Override (custom ceiling)
+  upperHt: 0,                  // Not set (auto-calculated from ceiling)
+  // ... other overrides
+}
+```
+
+#### Resolution Logic
+The calculator uses **nullish coalescing** to cascade through tiers:
+```javascript
+// Example: Resolve shipping rate for a line item
+const shippingRate =
+    item.overrideShippingRate ??      // TIER 3: Line item override
+    quote.overrides?.shippingRate ??  // TIER 2: Quote override
+    globalConfig.rates.shippingRate;  // TIER 1: Global default
+```
+
+**Key functions**:
+- `getProjectSettings()` - Resolves TIER 1 & 2 (global + quote)
+- `getEffectiveRates(item)` - Resolves all 3 tiers for rates
+- `getEffectiveDimensions(item)` - Resolves all 3 tiers for dimensions
+
+**Visual Indicators**:
+- Quote level: Badge shows "Global" or "X Custom"
+- Line item level: Status text shows "Using quote defaults" or "Custom settings"
+
+#### Dimension Auto-Calculation
+When ceiling height changes, upper cabinet height auto-updates via `CEILING_TO_UPPER_HT` lookup:
+- 8ft ceiling → 760mm upper height
+- 9ft ceiling → 920mm upper height
+- etc.
+
+This cascades through the same 3-tier system.
 
 ### localStorage Schema
 
 **Keys** (defined in `utils/constants.js`):
-- `bosco_current_quote`: Current working quote (auto-saved)
+- `bosco_global_config`: Global defaults for all quotes (NEW in v3.0)
+- `bosco_current_quote`: Current working quote (auto-saved, v2 schema with overrides)
 - `bosco_saved_quotes`: Array of manually saved quotes
 
 **sessionStorage:**
 - `bosco_auth`: Authentication flag ('true' when logged in)
+
+**Data Schema Evolution**:
+- v1: Flat structure, no global config, no quote overrides
+- v2 (v3.0): Global config separate, quotes have `overrides` object, line items have individual override fields
+- Auto-migration: v1 quotes automatically upgrade to v2 on load
 
 ## Development Workflow
 
@@ -139,11 +283,11 @@ npm run dev
 
 ### Making Changes
 
-#### **To modify rates/pricing:**
-- Finish rates: Edit `src/js/utils/constants.js` → `FINISH_RATES`
+#### **To modify default rates/pricing:**
+**v3.0 NOTE**: Rates are now stored in global config, not hardcoded!
+- Factory defaults: Edit `src/js/utils/constants.js` → `DEFAULT_RATES`, `FINISH_RATES`, `CARCASS_RATES`
+- User's global defaults: Use Global Settings modal in UI (persists to localStorage)
 - Ceiling/height mappings: Edit `src/js/utils/constants.js` → `CEILING_TO_MM`, `CEILING_TO_UPPER_HT`
-- Default rates: Edit `src/js/utils/constants.js` → `DEFAULT_RATES`
-- Default form values: Edit `src/index.html` input `value` attributes
 
 #### **To change password:**
 Edit `src/js/components/auth.js` line 10:

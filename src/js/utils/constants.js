@@ -53,7 +53,8 @@ export const DEFAULT_RATES = {
     DRAWER: 200,              // CAD per drawer
     ACCESSORY: 300,           // CAD per accessory
     EXCHANGE_RATE: 1.42,      // USD to CAD
-    MARKUP: 0.80,             // 80% markup
+    MARKUP_FULL: 0.80,        // 80% markup for full house
+    MARKUP_SINGLE: 0.90,      // 90% markup for single project
     DISCOUNT: 0.50            // 50% discount
 };
 
@@ -66,8 +67,47 @@ export const DEFAULT_DIMENSIONS = {
     PANTRY_DEPTH: 600
 };
 
+// Factory defaults for global configuration
+export const FACTORY_DEFAULTS = {
+    version: 1,
+    lastUpdated: null, // Will be set when saved
+    rates: {
+        shippingRate: DEFAULT_RATES.SHIPPING_PER_LF,
+        installRate: DEFAULT_RATES.INSTALL_PER_LF_FULL,
+        drawerRate: DEFAULT_RATES.DRAWER,
+        accessoryRate: DEFAULT_RATES.ACCESSORY,
+        markupRateFull: DEFAULT_RATES.MARKUP_FULL * 100, // Store as percentage
+        markupRateSingle: DEFAULT_RATES.MARKUP_SINGLE * 100, // Store as percentage
+        discountRate: DEFAULT_RATES.DISCOUNT * 100, // Store as percentage
+        exchangeRate: DEFAULT_RATES.EXCHANGE_RATE
+    },
+    dimensions: {
+        defaultUpperHt: DEFAULT_DIMENSIONS.UPPER_HEIGHT,
+        defaultBaseHt: DEFAULT_DIMENSIONS.BASE_HEIGHT,
+        defaultUpperDp: DEFAULT_DIMENSIONS.UPPER_DEPTH,
+        defaultBaseDp: DEFAULT_DIMENSIONS.BASE_DEPTH,
+        defaultPantryDp: DEFAULT_DIMENSIONS.PANTRY_DEPTH
+    },
+    materials: {
+        carcassRates: {
+            holike: CARCASS_RATES.holike,
+            allure: CARCASS_RATES.allure
+        },
+        finishRates: {
+            PVC: { unshaped: FINISH_RATES.PVC.unshaped, shaped: FINISH_RATES.PVC.shaped },
+            Melamine: { unshaped: FINISH_RATES.Melamine.unshaped, shaped: FINISH_RATES.Melamine.shaped },
+            Skin: { unshaped: FINISH_RATES.Skin.unshaped, shaped: FINISH_RATES.Skin.shaped },
+            'Paint/Lacquer': { unshaped: FINISH_RATES['Paint/Lacquer'].unshaped, shaped: FINISH_RATES['Paint/Lacquer'].shaped },
+            Powder: { unshaped: FINISH_RATES.Powder.unshaped, shaped: FINISH_RATES.Powder.shaped },
+            Veneer: { unshaped: FINISH_RATES.Veneer.unshaped, shaped: FINISH_RATES.Veneer.shaped },
+            PET: { unshaped: FINISH_RATES.PET.unshaped, shaped: FINISH_RATES.PET.shaped }
+        }
+    }
+};
+
 // localStorage keys
 export const STORAGE_KEYS = {
+    GLOBAL_CONFIG: 'bosco_global_config', // NEW: Global defaults
     CURRENT_QUOTE: 'bosco_current_quote',
     SAVED_QUOTES: 'bosco_saved_quotes',
     AUTH: 'bosco_auth'

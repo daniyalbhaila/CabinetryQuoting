@@ -5,8 +5,9 @@
 
 import { getElementById, setText } from '../utils/dom.js';
 import { escapeHtml, formatCurrency, formatDimension } from '../utils/formatting.js';
-import { calculateLineItem, getProjectSettings } from '../services/calculator.js';
+import { calculateLineItem, getProjectSettings, getEffectiveRates, hasShapedRate } from '../services/calculator.js';
 import { FINISH_RATES } from '../utils/constants.js';
+import { showBreakdown } from './breakdown.js';
 
 // Store references to avoid multiple event listener attachments
 let listenersAttached = false;
@@ -55,16 +56,36 @@ function setupLineItemEventDelegation() {
             return;
         }
 
-        if (action === 'toggle') {
+        // Handle show-breakdown first (before toggle) to prevent header toggle from capturing it
+        if (action === 'show-breakdown') {
+            e.stopPropagation();
+            e.preventDefault();
+            handleShowBreakdown(id);
+        } else if (action === 'toggle') {
             handleToggleCollapse(id);
         } else if (action === 'delete') {
             e.stopPropagation();
             if (window.quoteApp && window.quoteApp.removeLineItem) {
                 window.quoteApp.removeLineItem(id);
             }
+        } else if (action === 'toggle-advanced') {
+            e.stopPropagation();
+            handleToggleAdvanced(id);
         } else if (action === 'toggle-override') {
             e.stopPropagation();
             handleToggleOverride(id);
+        } else if (action === 'toggle-config-override') {
+            e.stopPropagation();
+            handleToggleConfigOverride(id);
+        } else if (action === 'add-additional') {
+            e.stopPropagation();
+            handleAddAdditional(id);
+        } else if (action === 'remove-additional') {
+            e.stopPropagation();
+            const index = parseInt(e.target.closest('[data-index]')?.dataset.index);
+            if (!isNaN(index)) {
+                handleRemoveAdditional(id, index);
+            }
         }
     });
 
@@ -81,6 +102,23 @@ function setupLineItemEventDelegation() {
         } else if (action === 'update-name' && !isNaN(id)) {
             if (window.quoteApp && window.quoteApp.updateLineItem) {
                 window.quoteApp.updateLineItem(id, 'name', e.target.value);
+            }
+        } else if (action === 'update-additional' && !isNaN(id) && field) {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index)) {
+                handleUpdateAdditional(id, index, field, e.target.value);
+            }
+        } else if (action === 'update' && !isNaN(id) && field === 'finish') {
+            // When finish changes, check if shaped should be disabled
+            if (window.quoteApp && window.quoteApp.updateLineItem) {
+                window.quoteApp.updateLineItem(id, field, e.target.value);
+                // Force shaped to 'no' if new finish doesn't have shaped rate
+                if (!hasShapedRate(e.target.value)) {
+                    const item = window.quoteApp.lineItems.find((i) => i.id === id);
+                    if (item && item.shaped === 'yes') {
+                        window.quoteApp.updateLineItem(id, 'shaped', 'no');
+                    }
+                }
             }
         }
     });
@@ -101,6 +139,20 @@ function handleToggleCollapse(id) {
 }
 
 /**
+ * Handle toggle advanced section
+ * @param {number} id - Line item ID
+ */
+function handleToggleAdvanced(id) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item) {
+            item.showAdvanced = !item.showAdvanced;
+            window.quoteApp.recalculateAll();
+        }
+    }
+}
+
+/**
  * Handle toggle override section
  * @param {number} id - Line item ID
  */
@@ -110,6 +162,100 @@ function handleToggleOverride(id) {
         if (item) {
             item.showOverride = !item.showOverride;
             window.quoteApp.recalculateAll();
+        }
+    }
+}
+
+/**
+ * Handle toggle config override section
+ * @param {number} id - Line item ID
+ */
+function handleToggleConfigOverride(id) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item) {
+            item.showConfigOverride = !item.showConfigOverride;
+            window.quoteApp.recalculateAll();
+        }
+    }
+}
+
+/**
+ * Handle add additional item
+ * @param {number} id - Line item ID
+ */
+function handleAddAdditional(id) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item) {
+            if (!item.additionalItems) {
+                item.additionalItems = [];
+            }
+            item.additionalItems.push({ description: '', price: 0 });
+            window.quoteApp.recalculateAll();
+        }
+    }
+}
+
+/**
+ * Handle remove additional item
+ * @param {number} id - Line item ID
+ * @param {number} index - Item index
+ */
+function handleRemoveAdditional(id, index) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item && item.additionalItems) {
+            item.additionalItems.splice(index, 1);
+            window.quoteApp.recalculateAll();
+        }
+    }
+}
+
+/**
+ * Handle update additional item
+ * @param {number} id - Line item ID
+ * @param {number} index - Item index
+ * @param {string} field - Field to update ('description' or 'price')
+ * @param {*} value - New value
+ */
+function handleUpdateAdditional(id, index, field, value) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item && item.additionalItems && item.additionalItems[index]) {
+            if (field === 'description') {
+                item.additionalItems[index].description = value;
+            } else if (field === 'price') {
+                item.additionalItems[index].price = parseFloat(value) || 0;
+            }
+            window.quoteApp.debouncedSave();
+
+            // Update calculations
+            const calc = calculateLineItem(item);
+            updateLineItemDOM(id, calc);
+
+            // Update quote summary
+            if (window.quoteApp.lineItems) {
+                const quoteSummary = document.getElementById('quoteSummary');
+                if (quoteSummary) {
+                    import('../components/quoteSummary.js').then(module => {
+                        module.updateQuoteSummary(window.quoteApp.lineItems);
+                    });
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Handle show breakdown modal
+ * @param {number} id - Line item ID
+ */
+function handleShowBreakdown(id) {
+    if (window.quoteApp && window.quoteApp.lineItems) {
+        const item = window.quoteApp.lineItems.find((i) => i.id === id);
+        if (item) {
+            showBreakdown(item);
         }
     }
 }
@@ -146,7 +292,6 @@ export function renderLineItems(lineItems, onUpdate, onDelete) {
 function renderEmptyState() {
     return `
         <div class="card empty-state">
-            <div class="empty-state-icon">📦</div>
             <h3>No line items yet</h3>
             <p>Add your first room or cabinet section to get started</p>
             <button class="btn btn-primary" id="addFirstItem">
@@ -214,6 +359,14 @@ function renderLineItemHeader(item, index, calc) {
             <div class="line-item-right">
                 <div class="line-item-price" id="price-${item.id}">
                     ${formatCurrency(calc.finalPrice)}
+                    <svg class="calculator-icon" data-action="show-breakdown" data-id="${item.id}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="2" width="16" height="20" rx="2"/>
+                        <line x1="8" y1="6" x2="16" y2="6"/>
+                        <line x1="8" y1="10" x2="16" y2="10"/>
+                        <line x1="8" y1="14" x2="12" y2="14"/>
+                        <line x1="8" y1="18" x2="12" y2="18"/>
+                        <rect x="14" y="14" width="2" height="5"/>
+                    </svg>
                 </div>
                 <button class="btn btn-danger" data-action="delete" data-id="${item.id}">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -238,11 +391,72 @@ function renderLineItemHeader(item, index, calc) {
  * @returns {string} Body HTML
  */
 function renderLineItemBody(item, dims, settings, calc) {
+    const rates = getEffectiveRates(item);
+
     return `
         <div class="line-item-body">
-            ${renderLinearFootageSection(item)}
-            ${renderFinishSection(item, settings)}
-            ${renderDimensionsSection(item, dims, settings)}
+            ${renderBasicSection(item, settings)}
+            ${renderAdvancedSection(item, dims, settings, rates)}
+        </div>
+    `;
+}
+
+/**
+ * Render basic section (always visible)
+ * @param {Object} item - Line item data
+ * @param {Object} settings - Project settings
+ * @returns {string} Basic section HTML
+ */
+function renderBasicSection(item, settings) {
+    return `
+        ${renderLinearFootageSection(item)}
+        ${renderFinishSection(item, settings)}
+        ${renderRoomSettingsSection(item, settings)}
+    `;
+}
+
+/**
+ * Render advanced section (collapsed by default)
+ * @param {Object} item - Line item data
+ * @param {Object} dims - Effective dimensions
+ * @param {Object} settings - Project settings
+ * @param {Object} rates - Effective rates
+ * @returns {string} Advanced section HTML
+ */
+function renderAdvancedSection(item, dims, settings, rates) {
+    const showAdvanced = item.showAdvanced || false;
+    const toggleClass = showAdvanced ? 'active' : '';
+    const contentClass = showAdvanced ? 'show' : '';
+    const toggleIcon = showAdvanced
+        ? '<path d="M19 9l-7 7-7-7"/>'
+        : '<path d="M9 18l6-6-6-6"/>';
+
+    // Count active overrides
+    const hasOverrides = item.ceilingFt || item.upperHt || item.baseHt || item.upperDp || item.baseDp || item.pantryDp ||
+        item.overrideShippingRate !== null && item.overrideShippingRate !== undefined ||
+        item.overrideInstallRate !== null && item.overrideInstallRate !== undefined ||
+        item.overrideDrawerRate !== null && item.overrideDrawerRate !== undefined ||
+        item.overrideAccessoryRate !== null && item.overrideAccessoryRate !== undefined ||
+        item.overrideMarkupRate !== null && item.overrideMarkupRate !== undefined ||
+        item.overrideDiscountRate !== null && item.overrideDiscountRate !== undefined ||
+        (item.additionalItems && item.additionalItems.length > 0);
+
+    const statusText = hasOverrides ? 'Custom settings' : 'Using quote defaults';
+
+    return `
+        <div class="line-item-section" style="grid-column: 1 / -1;">
+            <div class="override-toggle ${toggleClass}" data-action="toggle-advanced" data-id="${item.id}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${toggleIcon}
+                </svg>
+                <span>Advanced Settings</span>
+                <span class="advanced-status">${statusText}</span>
+            </div>
+            <div class="override-content ${contentClass}">
+                ${renderDimensionsSection(item, dims, settings)}
+                ${renderConfigOverrideSection(item, settings, rates)}
+                ${renderAdditionalItemsStandaloneSection(item)}
+            </div>
         </div>
     `;
 }
@@ -307,6 +521,12 @@ function renderFinishSection(item, settings) {
         )
         .join('');
 
+    // Check if current finish has different shaped rate
+    const currentFinish = item.finish || 'PVC';
+    const shapedEnabled = hasShapedRate(currentFinish);
+    const shapedDisabled = !shapedEnabled ? ' disabled' : '';
+    const shapedStyle = !shapedEnabled ? ' style="opacity: 0.5; cursor: not-allowed;"' : '';
+
     return `
         <div class="line-item-section">
             <div class="line-item-section-title">Finish & Options</div>
@@ -317,11 +537,11 @@ function renderFinishSection(item, settings) {
                 </select>
             </div>
             <div class="input-row">
-                <div class="input-group">
-                    <label>Shaped?</label>
-                    <select data-action="update" data-id="${item.id}" data-field="shaped">
-                        <option value="no"${item.shaped === 'no' ? ' selected' : ''}>No</option>
-                        <option value="yes"${item.shaped === 'yes' ? ' selected' : ''}>Yes</option>
+                <div class="input-group"${shapedStyle}>
+                    <label>Shaped? ${!shapedEnabled ? '(Same rate as unshaped)' : ''}</label>
+                    <select data-action="update" data-id="${item.id}" data-field="shaped"${shapedDisabled}>
+                        <option value="no"${item.shaped === 'no' || !shapedEnabled ? ' selected' : ''}>No</option>
+                        <option value="yes"${item.shaped === 'yes' && shapedEnabled ? ' selected' : ''}>Yes</option>
                     </select>
                 </div>
                 <div class="input-group">
@@ -356,6 +576,32 @@ function renderFinishSection(item, settings) {
                     >
                 </div>
             </div>
+        </div>
+    `;
+}
+
+/**
+ * Render room settings section (ceiling, carcass)
+ * @param {Object} item - Line item data
+ * @param {Object} settings - Project settings
+ * @returns {string} Section HTML
+ */
+function renderRoomSettingsSection(item, settings) {
+    return `
+        <div class="line-item-section">
+            <div class="line-item-section-title">Room Settings</div>
+            <div class="input-group">
+                <label>Ceiling Height</label>
+                <select data-action="update" data-id="${item.id}" data-field="ceilingFt">
+                    <option value=""${!item.ceilingFt ? ' selected' : ''}>Default (${settings.defaultCeiling}ft)</option>
+                    <option value="8"${item.ceilingFt === '8' ? ' selected' : ''}>8 ft (96")</option>
+                    <option value="9"${item.ceilingFt === '9' ? ' selected' : ''}>9 ft (108")</option>
+                    <option value="10"${item.ceilingFt === '10' ? ' selected' : ''}>10 ft (120")</option>
+                    <option value="11"${item.ceilingFt === '11' ? ' selected' : ''}>11 ft (132")</option>
+                    <option value="12"${item.ceilingFt === '12' ? ' selected' : ''}>12 ft (144")</option>
+                    <option value="13"${item.ceilingFt === '13' ? ' selected' : ''}>13 ft (156")</option>
+                </select>
+            </div>
             <div class="input-group">
                 <label>Carcass Supplier</label>
                 <select data-action="update" data-id="${item.id}" data-field="carcassSupplier">
@@ -376,23 +622,81 @@ function renderFinishSection(item, settings) {
  * @returns {string} Section HTML
  */
 function renderDimensionsSection(item, dims, settings) {
+    const toggleClass = item.showOverride ? 'active' : '';
+    const contentClass = item.showOverride ? 'show' : '';
+
     return `
-        <div class="line-item-section">
-            <div class="line-item-section-title">Dimensions</div>
-            <div class="input-group">
-                <label>Ceiling Height</label>
-                <select data-action="update" data-id="${item.id}" data-field="ceilingFt">
-                    <option value=""${!item.ceilingFt ? ' selected' : ''}>Default (${settings.defaultCeiling}ft)</option>
-                    <option value="8"${item.ceilingFt === '8' ? ' selected' : ''}>8 ft (96")</option>
-                    <option value="9"${item.ceilingFt === '9' ? ' selected' : ''}>9 ft (108")</option>
-                    <option value="10"${item.ceilingFt === '10' ? ' selected' : ''}>10 ft (120")</option>
-                    <option value="11"${item.ceilingFt === '11' ? ' selected' : ''}>11 ft (132")</option>
-                    <option value="12"${item.ceilingFt === '12' ? ' selected' : ''}>12 ft (144")</option>
-                    <option value="13"${item.ceilingFt === '13' ? ' selected' : ''}>13 ft (156")</option>
-                </select>
+        <div class="line-item-section" style="margin-bottom: 1.5rem;">
+            <div class="line-item-section-title">Dimension Overrides</div>
+            <div class="dimension-display" style="margin-bottom: 0.5rem;">Using: Upper ${formatDimension(dims.upperHt)} • Base ${formatDimension(dims.baseHt)}</div>
+
+            <div class="override-toggle ${toggleClass}" data-action="toggle-override" data-id="${item.id}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+                <span>${item.showOverride ? 'Hide dimension overrides' : 'Override dimensions'}</span>
             </div>
-            <div class="dimension-display">Using: Upper ${formatDimension(dims.upperHt)} • Base ${formatDimension(dims.baseHt)}</div>
-            ${renderOverrideSection(item, dims, settings)}
+            <div class="override-content ${contentClass}">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Upper Ht (mm)</label>
+                        <input
+                            type="number"
+                            value="${item.upperHt || ''}"
+                            placeholder="${dims.baseUpperHt}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="upperHt"
+                        >
+                    </div>
+                    <div class="input-group">
+                        <label>Base Ht (mm)</label>
+                        <input
+                            type="number"
+                            value="${item.baseHt || ''}"
+                            placeholder="${settings.defaultBaseHt}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="baseHt"
+                        >
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Upper Dp (mm)</label>
+                        <input
+                            type="number"
+                            value="${item.upperDp || ''}"
+                            placeholder="${settings.defaultUpperDp}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="upperDp"
+                        >
+                    </div>
+                    <div class="input-group">
+                        <label>Base Dp (mm)</label>
+                        <input
+                            type="number"
+                            value="${item.baseDp || ''}"
+                            placeholder="${settings.defaultBaseDp}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="baseDp"
+                        >
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Pantry Dp (mm)</label>
+                    <input
+                        type="number"
+                        value="${item.pantryDp || ''}"
+                        placeholder="${settings.defaultPantryDp}"
+                        data-action="update"
+                        data-id="${item.id}"
+                        data-field="pantryDp"
+                    >
+                </div>
+            </div>
         </div>
     `;
 }
@@ -485,6 +789,180 @@ function renderOverrideSection(item, dims, settings) {
 }
 
 /**
+ * Render config override section
+ * @param {Object} item - Line item data
+ * @param {Object} settings - Project settings
+ * @param {Object} rates - Effective rates
+ * @returns {string} Config override HTML
+ */
+function renderConfigOverrideSection(item, settings, rates) {
+    const toggleClass = item.showConfigOverride ? 'active' : '';
+    const contentClass = item.showConfigOverride ? 'show' : '';
+    // Get defaults to show as placeholders
+    const defaultShipping = settings.shippingRate;
+    const defaultInstall = settings.installRate;
+    const defaultDrawer = settings.drawerRate;
+    const defaultAccessory = settings.accessoryRate;
+    const defaultMarkup = (settings.markupRate * 100).toFixed(0);
+    const defaultDiscount = (settings.discountRate * 100).toFixed(0);
+
+    return `
+        <div class="line-item-section" style="margin-bottom: 1.5rem;">
+            <div class="line-item-section-title">Pricing Overrides</div>
+            <div class="dimension-display" style="margin-bottom: 0.5rem;">Using quote defaults</div>
+
+            <div class="override-toggle ${toggleClass}" data-action="toggle-config-override" data-id="${item.id}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+                <span>${item.showConfigOverride ? 'Hide pricing overrides' : 'Override pricing'}</span>
+            </div>
+            <div class="override-content ${contentClass}">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Shipping ($/LF)</label>
+                        <input
+                            type="number"
+                            value="${item.overrideShippingRate !== null && item.overrideShippingRate !== undefined ? item.overrideShippingRate : ''}"
+                            placeholder="${defaultShipping}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="overrideShippingRate"
+                            step="0.01"
+                        >
+                    </div>
+                    <div class="input-group">
+                        <label>Install ($/LF)</label>
+                        <input
+                            type="number"
+                            value="${item.overrideInstallRate !== null && item.overrideInstallRate !== undefined ? item.overrideInstallRate : ''}"
+                            placeholder="${defaultInstall}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="overrideInstallRate"
+                            step="0.01"
+                        >
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Drawer Cost ($)</label>
+                        <input
+                            type="number"
+                            value="${item.overrideDrawerRate !== null && item.overrideDrawerRate !== undefined ? item.overrideDrawerRate : ''}"
+                            placeholder="${defaultDrawer}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="overrideDrawerRate"
+                            step="0.01"
+                        >
+                    </div>
+                    <div class="input-group">
+                        <label>Accessory Cost ($)</label>
+                        <input
+                            type="number"
+                            value="${item.overrideAccessoryRate !== null && item.overrideAccessoryRate !== undefined ? item.overrideAccessoryRate : ''}"
+                            placeholder="${defaultAccessory}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="overrideAccessoryRate"
+                            step="0.01"
+                        >
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Markup (%)</label>
+                        <input
+                            type="number"
+                            value="${item.overrideMarkupRate !== null && item.overrideMarkupRate !== undefined ? item.overrideMarkupRate : ''}"
+                            placeholder="${defaultMarkup}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="overrideMarkupRate"
+                            step="0.1"
+                        >
+                    </div>
+                    <div class="input-group">
+                        <label>Discount (%)</label>
+                        <input
+                            type="number"
+                            value="${item.overrideDiscountRate !== null && item.overrideDiscountRate !== undefined ? item.overrideDiscountRate : ''}"
+                            placeholder="${defaultDiscount}"
+                            data-action="update"
+                            data-id="${item.id}"
+                            data-field="overrideDiscountRate"
+                            step="0.1"
+                        >
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render additional items as standalone section
+ * @param {Object} item - Line item data
+ * @returns {string} Additional items HTML
+ */
+function renderAdditionalItemsStandaloneSection(item) {
+    const additionalItems = item.additionalItems || [];
+
+    const itemsHtml = additionalItems.map((addItem, index) => `
+        <div class="input-row" style="margin-bottom: 0.5rem;">
+            <div class="input-group" style="flex: 2;">
+                <input
+                    type="text"
+                    value="${escapeHtml(addItem.description || '')}"
+                    placeholder="Description"
+                    data-action="update-additional"
+                    data-id="${item.id}"
+                    data-index="${index}"
+                    data-field="description"
+                >
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <input
+                    type="number"
+                    value="${addItem.price || ''}"
+                    placeholder="Price (CAD)"
+                    data-action="update-additional"
+                    data-id="${item.id}"
+                    data-index="${index}"
+                    data-field="price"
+                    step="0.01"
+                >
+            </div>
+            <button
+                type="button"
+                class="btn btn-sm btn-secondary"
+                data-action="remove-additional"
+                data-id="${item.id}"
+                data-index="${index}"
+                style="align-self: flex-end; padding: 0.5rem;"
+            >✕</button>
+        </div>
+    `).join('');
+
+    return `
+        <div class="line-item-section">
+            <div class="line-item-section-title">Additional Items</div>
+            <div style="margin-bottom: 0.75rem;">
+                <button
+                    type="button"
+                    class="btn btn-sm btn-secondary"
+                    data-action="add-additional"
+                    data-id="${item.id}"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                >+ Add Additional Item</button>
+            </div>
+            ${additionalItems.length > 0 ? itemsHtml : '<div style="color: var(--text-muted); font-size: 0.875rem; text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: 6px;">No additional items. Click "Add Additional Item" to add custom charges.</div>'}
+        </div>
+    `;
+}
+
+/**
  * Render line item footer
  * @param {Object} item - Line item data
  * @param {Object} calc - Calculation results
@@ -522,7 +1000,22 @@ function renderLineItemFooter(item, calc, dims) {
  * @param {Object} calc - New calculation results
  */
 export function updateLineItemDOM(id, calc) {
-    setText(`price-${id}`, formatCurrency(calc.finalPrice));
+    // Update price with calculator icon preserved
+    const priceEl = getElementById(`price-${id}`);
+    if (priceEl) {
+        priceEl.innerHTML = `
+            ${formatCurrency(calc.finalPrice)}
+            <svg class="calculator-icon" data-action="show-breakdown" data-id="${id}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="16" y2="10"/>
+                <line x1="16" y1="14" x2="16" y2="14"/>
+                <line x1="8" y1="14" x2="12" y2="14"/>
+                <line x1="8" y1="18" x2="12" y2="18"/>
+                <line x1="16" y1="18" x2="16" y2="18"/>
+            </svg>
+        `;
+    }
     setText(`lf-${id}`, `${calc.totalLF} LF`);
     setText(`cabinetry-${id}`, formatCurrency(calc.cabinetry));
     setText(`shipping-${id}`, formatCurrency(calc.shipping));
