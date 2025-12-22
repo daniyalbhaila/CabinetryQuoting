@@ -54,7 +54,12 @@ class QuoteApp {
         // Initialize all components
         initModals(() => this.debouncedRecalculate());
         initQuoteForm(
-            () => this.debouncedSave(),
+            () => {
+                // Update overrides and recalculate when form changes (including project-level overrides)
+                this.quoteOverrides = getQuoteOverrides();
+                this.debouncedRecalculate();
+                this.debouncedSave();
+            },
             (quote) => this.loadQuote(quote)
         );
         initLineItems(() => this.debouncedSave());
