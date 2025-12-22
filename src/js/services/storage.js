@@ -125,12 +125,20 @@ export function getQuoteById(id) {
     return quotes.find((q) => q.id === id) || null;
 }
 
+// In-memory fallback for when sessionStorage is unavailable
+let inMemoryAuth = false;
+
 /**
  * Check if user is authenticated
  * @returns {boolean} Authentication status
  */
 export function isAuthenticated() {
-    return sessionStorage.getItem(STORAGE_KEYS.AUTH) === 'true';
+    try {
+        return sessionStorage.getItem(STORAGE_KEYS.AUTH) === 'true';
+    } catch (e) {
+        console.warn('sessionStorage access failed, using in-memory fallback', e);
+        return inMemoryAuth;
+    }
 }
 
 /**
@@ -138,18 +146,29 @@ export function isAuthenticated() {
  * @param {boolean} status - Authentication status
  */
 export function setAuthenticated(status) {
-    if (status) {
-        sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
-    } else {
-        sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+    try {
+        if (status) {
+            sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
+        } else {
+            sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+        }
+    } catch (e) {
+        console.warn('sessionStorage access failed, using in-memory fallback', e);
     }
+    // Always update in-memory state
+    inMemoryAuth = status;
 }
 
 /**
  * Clear all authentication data
  */
 export function clearAuth() {
-    sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+    try {
+        sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+    } catch (e) {
+        console.warn('sessionStorage access failed, using in-memory fallback', e);
+    }
+    inMemoryAuth = false;
 }
 
 /**

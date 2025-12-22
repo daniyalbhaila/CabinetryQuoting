@@ -283,6 +283,10 @@ export function renderLineItems(lineItems, onUpdate, onDelete) {
     container.innerHTML = lineItems
         .map((item, index) => renderLineItem(item, index))
         .join('');
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }
 
 /**
@@ -295,10 +299,7 @@ function renderEmptyState() {
             <h3>No line items yet</h3>
             <p>Add your first room or cabinet section to get started</p>
             <button class="btn btn-primary" id="addFirstItem">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
+                <i data-lucide="plus"></i>
                 Add First Item
             </button>
         </div>
@@ -359,24 +360,14 @@ function renderLineItemHeader(item, index, calc) {
             <div class="line-item-right">
                 <div class="line-item-price" id="price-${item.id}">
                     ${formatCurrency(calc.finalPrice)}
-                    <svg class="calculator-icon" data-action="show-breakdown" data-id="${item.id}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="4" y="2" width="16" height="20" rx="2"/>
-                        <line x1="8" y1="6" x2="16" y2="6"/>
-                        <line x1="8" y1="10" x2="16" y2="10"/>
-                        <line x1="8" y1="14" x2="12" y2="14"/>
-                        <line x1="8" y1="18" x2="12" y2="18"/>
-                        <rect x="14" y="14" width="2" height="5"/>
-                    </svg>
                 </div>
-                <button class="btn btn-danger" data-action="delete" data-id="${item.id}">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
+                <button class="btn btn-icon" data-action="show-breakdown" data-id="${item.id}" title="Show Breakdown">
+                    <i data-lucide="calculator"></i>
                 </button>
-                <svg class="line-item-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
+                <button class="btn btn-icon btn-danger" data-action="delete" data-id="${item.id}" title="Delete Item">
+                    <i data-lucide="trash-2"></i>
+                </button>
+                <i class="line-item-chevron" data-lucide="chevron-down"></i>
             </div>
         </div>
     `;
@@ -396,6 +387,7 @@ function renderLineItemBody(item, dims, settings, calc) {
     return `
         <div class="line-item-body">
             ${renderBasicSection(item, settings)}
+            ${renderAdditionalItemsStandaloneSection(item)}
             ${renderAdvancedSection(item, dims, settings, rates)}
         </div>
     `;
@@ -428,8 +420,8 @@ function renderAdvancedSection(item, dims, settings, rates) {
     const toggleClass = showAdvanced ? 'active' : '';
     const contentClass = showAdvanced ? 'show' : '';
     const toggleIcon = showAdvanced
-        ? '<path d="M19 9l-7 7-7-7"/>'
-        : '<path d="M9 18l6-6-6-6"/>';
+        ? '<i data-lucide="chevron-down"></i>'
+        : '<i data-lucide="chevron-right"></i>';
 
     // Count active overrides
     const hasOverrides = item.ceilingFt || item.upperHt || item.baseHt || item.upperDp || item.baseDp || item.pantryDp ||
@@ -446,16 +438,13 @@ function renderAdvancedSection(item, dims, settings, rates) {
     return `
         <div class="line-item-section" style="grid-column: 1 / -1;">
             <div class="override-toggle ${toggleClass}" data-action="toggle-advanced" data-id="${item.id}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    ${toggleIcon}
-                </svg>
+                ${toggleIcon}
                 <span>Advanced Settings</span>
                 <span class="advanced-status">${statusText}</span>
             </div>
             <div class="override-content ${contentClass}">
                 ${renderDimensionsSection(item, dims, settings)}
                 ${renderConfigOverrideSection(item, settings, rates)}
-                ${renderAdditionalItemsStandaloneSection(item)}
             </div>
         </div>
     `;
@@ -631,9 +620,7 @@ function renderDimensionsSection(item, dims, settings) {
             <div class="dimension-display" style="margin-bottom: 0.5rem;">Using: Upper ${formatDimension(dims.upperHt)} • Base ${formatDimension(dims.baseHt)}</div>
 
             <div class="override-toggle ${toggleClass}" data-action="toggle-override" data-id="${item.id}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
+                <i data-lucide="chevron-right"></i>
                 <span>${item.showOverride ? 'Hide dimension overrides' : 'Override dimensions'}</span>
             </div>
             <div class="override-content ${contentClass}">
@@ -712,15 +699,13 @@ function renderOverrideSection(item, dims, settings) {
     const toggleClass = item.showOverride ? 'active' : '';
     const contentClass = item.showOverride ? 'show' : '';
     const toggleIcon = item.showOverride
-        ? '<path d="M5 12h14"/>'
-        : '<path d="M12 5v14M5 12h14"/>';
+        ? '<i data-lucide="minus"></i>'
+        : '<i data-lucide="plus"></i>';
 
     return `
         <div class="override-section">
             <div class="override-toggle ${toggleClass}" data-action="toggle-override" data-id="${item.id}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    ${toggleIcon}
-                </svg>
+                ${toggleIcon}
                 ${item.showOverride ? 'Hide overrides' : 'Override dimensions'}
             </div>
             <div class="override-content ${contentClass}">
@@ -812,9 +797,7 @@ function renderConfigOverrideSection(item, settings, rates) {
             <div class="dimension-display" style="margin-bottom: 0.5rem;">Using quote defaults</div>
 
             <div class="override-toggle ${toggleClass}" data-action="toggle-config-override" data-id="${item.id}">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
+                <i data-lucide="chevron-right"></i>
                 <span>${item.showConfigOverride ? 'Hide pricing overrides' : 'Override pricing'}</span>
             </div>
             <div class="override-content ${contentClass}">
@@ -910,10 +893,11 @@ function renderAdditionalItemsStandaloneSection(item) {
     const additionalItems = item.additionalItems || [];
 
     const itemsHtml = additionalItems.map((addItem, index) => `
-        <div class="input-row" style="margin-bottom: 0.5rem;">
-            <div class="input-group" style="flex: 2;">
+        <div class="additional-item-row">
+            <div class="additional-item-desc">
                 <input
                     type="text"
+                    class="form-input"
                     value="${escapeHtml(addItem.description || '')}"
                     placeholder="Description"
                     data-action="update-additional"
@@ -922,11 +906,12 @@ function renderAdditionalItemsStandaloneSection(item) {
                     data-field="description"
                 >
             </div>
-            <div class="input-group" style="flex: 1;">
+            <div class="additional-item-price">
                 <input
                     type="number"
+                    class="form-input"
                     value="${addItem.price || ''}"
-                    placeholder="Price (CAD)"
+                    placeholder="Price"
                     data-action="update-additional"
                     data-id="${item.id}"
                     data-index="${index}"
@@ -936,28 +921,34 @@ function renderAdditionalItemsStandaloneSection(item) {
             </div>
             <button
                 type="button"
-                class="btn btn-sm btn-secondary"
+                class="btn btn-icon btn-danger btn-remove-item"
                 data-action="remove-additional"
                 data-id="${item.id}"
                 data-index="${index}"
-                style="align-self: flex-end; padding: 0.5rem;"
-            >✕</button>
+                title="Remove Item"
+            >
+                <i data-lucide="x"></i>
+            </button>
         </div>
     `).join('');
 
     return `
-        <div class="line-item-section">
-            <div class="line-item-section-title">Additional Items</div>
-            <div style="margin-bottom: 0.75rem;">
+        <div class="line-item-section additional-items-section">
+            <div class="line-item-section-title">
+                <span>Additional Items</span>
                 <button
                     type="button"
                     class="btn btn-sm btn-secondary"
                     data-action="add-additional"
                     data-id="${item.id}"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                >+ Add Additional Item</button>
+                >
+                    <i data-lucide="plus"></i> Add Item
+                </button>
             </div>
-            ${additionalItems.length > 0 ? itemsHtml : '<div style="color: var(--text-muted); font-size: 0.875rem; text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: 6px;">No additional items. Click "Add Additional Item" to add custom charges.</div>'}
+            
+            <div class="additional-items-list">
+                ${additionalItems.length > 0 ? itemsHtml : '<div class="additional-items-empty">No additional items added</div>'}
+            </div>
         </div>
     `;
 }
@@ -1005,16 +996,11 @@ export function updateLineItemDOM(id, calc) {
     if (priceEl) {
         priceEl.innerHTML = `
             ${formatCurrency(calc.finalPrice)}
-            <svg class="calculator-icon" data-action="show-breakdown" data-id="${id}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="4" y="2" width="16" height="20" rx="2"/>
-                <line x1="8" y1="6" x2="16" y2="6"/>
-                <line x1="8" y1="10" x2="16" y2="10"/>
-                <line x1="16" y1="14" x2="16" y2="14"/>
-                <line x1="8" y1="14" x2="12" y2="14"/>
-                <line x1="8" y1="18" x2="12" y2="18"/>
-                <line x1="16" y1="18" x2="16" y2="18"/>
-            </svg>
+            <i class="calculator-icon" data-lucide="calculator" data-action="show-breakdown" data-id="${id}"></i>
         `;
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     }
     setText(`lf-${id}`, `${calc.totalLF} LF`);
     setText(`cabinetry-${id}`, formatCurrency(calc.cabinetry));

@@ -1,18 +1,34 @@
 /* Bosco Cabinetry Quote Calculator - Main Styles */
 
 :root {
-    --bg-primary: #0d0d0d;
-    --bg-secondary: #1a1a1a;
-    --bg-tertiary: #252525;
-    --bg-card: #1e1e1e;
-    --accent: #c9a227;
-    --accent-dim: #8a7019;
-    --text-primary: #f5f5f5;
-    --text-secondary: #a0a0a0;
-    --text-muted: #666;
-    --border: #333;
+    /* Linear-inspired Monochrome Palette */
+    --bg-primary: #08090A;
+    --bg-secondary: #121314;
+    --bg-tertiary: #1C1D1F;
+    --bg-card: #161718;
+
+    /* Accents - Pure White / Cool Gray */
+    --accent: #FFFFFF;
+    --accent-dim: #E1E1E3;
+    --accent-glow: rgba(255, 255, 255, 0.15);
+
+    /* Text */
+    --text-primary: #F7F8F8;
+    --text-secondary: #8A8F98;
+    --text-muted: #5F6570;
+
+    /* Borders */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.12);
+
+    /* Status */
     --success: #4ade80;
     --error: #f87171;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -22,18 +38,23 @@
 }
 
 body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', 'DM Sans', sans-serif;
+    /* Prefer Inter if available, fallback to DM Sans */
     background: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Header */
 .header {
-    background: var(--bg-secondary);
+    background: rgba(18, 19, 20, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -53,27 +74,10 @@ body {
     gap: 0.75rem;
 }
 
-.logo-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: var(--bg-primary);
-    font-size: 1.25rem;
-}
-
-.logo-text {
-    font-weight: 700;
-    font-size: 1.25rem;
-    letter-spacing: -0.02em;
-}
-
-.logo-text span {
-    color: var(--accent);
+.logo-img {
+    height: 32px;
+    width: auto;
+    display: block;
 }
 
 .header-actions {
@@ -98,13 +102,185 @@ body {
     gap: 2rem;
 }
 
+/* Sidebar */
 .sidebar {
     position: sticky;
     top: 80px;
-    height: fit-content;
+    height: calc(100vh - 120px);
+    /* Full height minus header and padding */
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    width: 280px;
+}
+
+/* ... existing sidebar styles ... */
+
+/* Sidebar Actions Card */
+.sidebar-actions-card {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: auto;
+    /* Pin to bottom */
+}
+
+/* ... existing sidebar actions styles ... */
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    /* Further reduced padding */
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    /* Smaller font */
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+/* ... existing button styles ... */
+
+.btn-icon {
+    width: 24px;
+    /* Reduced from 28px */
+    height: 24px;
+    /* Reduced from 28px */
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    /* Slightly tighter radius */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border: none;
+}
+
+/* ... existing btn-icon styles ... */
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Project Summary Card */
+.project-summary-card {
+    padding: 0.75rem 1rem;
+    border-radius: 8px 8px 0 0;
+    /* Remove bottom radius */
+    transition: background 0.2s;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    /* Remove bottom border to merge */
+    background: var(--bg-card);
+    /* Ensure background is set */
+}
+
+/* ... existing summary styles ... */
+
+/* Attached Overrides Button */
+#showProjectOverridesBtn {
+    border-radius: 0 0 8px 8px;
+    /* Remove top radius */
+    border-top: 1px solid var(--border);
+    /* Add separator */
+    margin-top: 0;
+    width: 100%;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top: none;
+    /* Let the separator handle it or merge */
+}
+
+#showProjectOverridesBtn:hover {
+    background: var(--bg-secondary);
+}
+
+.project-summary-card.has-overrides::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.project-summary-card:hover {
+    background: var(--bg-secondary);
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.btn-icon-sm {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-icon-sm:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.summary-info h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.summary-info p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.5rem 0;
+}
+
+.summary-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.summary-divider {
+    color: var(--border);
 }
 
 .content {
@@ -117,12 +293,18 @@ body {
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    border-color: var(--border-hover);
 }
 
 .card-header {
-    padding: 1rem 1.25rem;
+    padding: 0.875rem 1rem;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -132,7 +314,7 @@ body {
 }
 
 .card-header:hover {
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
 }
 
 .card-header-left {
@@ -142,10 +324,10 @@ body {
 }
 
 .card-header h2 {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: var(--text-secondary);
 }
 
@@ -159,7 +341,7 @@ body {
 }
 
 .card-body {
-    padding: 1.25rem;
+    padding: 1rem;
 }
 
 .card-body.collapsed {
@@ -180,29 +362,42 @@ body {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-secondary);
-    margin-bottom: 0.375rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+    text-transform: none;
+    /* Linear usually doesn't uppercase labels */
+    letter-spacing: normal;
 }
 
 .form-input,
 .form-select {
     width: 100%;
-    padding: 0.625rem 0.875rem;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
+    /* Linear style: no border by default, or very subtle */
+    border-radius: 6px;
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 0.9375rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) inset;
+    border: 1px solid transparent;
+    /* Ensure border exists */
+}
+
+.form-input:hover,
+.form-select:hover {
+    background-color: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.05);
+    /* Subtle border on hover to prevent shift if any */
 }
 
 .form-input:focus,
 .form-select:focus {
     outline: none;
+    background: var(--bg-primary);
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
+    box-shadow: 0 0 0 1px var(--accent), 0 1px 2px rgba(0, 0, 0, 0.2) inset;
 }
 
 .form-select {
@@ -238,11 +433,13 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    border-radius: 8px;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    /* Reduced padding */
+    border-radius: 6px;
     font-family: inherit;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    /* Slightly smaller font */
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -250,29 +447,34 @@ body {
 }
 
 .btn-primary {
-    background: var(--accent);
-    color: var(--bg-primary);
+    background: linear-gradient(180deg, #FFFFFF 0%, #E1E1E3 100%);
+    color: #000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.2);
+    text-shadow: none;
 }
 
 .btn-primary:hover {
-    background: #d4ad2d;
+    background: #FFFFFF;
     transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2), var(--shadow-glow);
 }
 
 .btn-secondary {
-    background: var(--bg-tertiary);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .btn-secondary:hover {
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-danger {
     background: transparent;
     color: var(--error);
-    padding: 0.5rem;
+    padding: 0.375rem;
 }
 
 .btn-danger:hover {
@@ -288,9 +490,42 @@ body {
     background: #3dc56d;
 }
 
+.btn-icon {
+    width: 24px;
+    /* Reduced from 28px */
+    height: 24px;
+    /* Reduced from 28px */
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    /* Slightly tighter radius */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-icon:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Ensure danger icon buttons are red */
+.btn-icon.btn-danger {
+    color: var(--error);
+}
+
+.btn-icon.btn-danger:hover {
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--error);
+}
+
 .btn-sm {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.8125rem;
+    padding: 0.25rem 0.5rem;
+    /* Even smaller for sm */
+    font-size: 0.75rem;
 }
 
 /* Empty State */
@@ -323,6 +558,7 @@ body {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -334,6 +570,7 @@ body {
     .main {
         grid-template-columns: 1fr;
     }
+
     .sidebar {
         position: static;
     }
@@ -343,4 +580,103 @@ body {
     .main {
         padding: 1rem;
     }
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Override Section Styles */
+.override-section {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+.override-toggle {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.override-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.override-toggle svg {
+    transition: transform 0.2s;
+}
+
+.override-content {
+    display: none;
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.override-content.open {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.quote-settings-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+}
+
+.quote-settings-badge.has-overrides {
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-weight: 600;
+}
+
+/* Sidebar Actions Card */
+.sidebar-actions-card {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: auto;
+    /* Pin to bottom */
+}
+
+.sidebar-total-section {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.sidebar-total-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar-total-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+}
+
+.sidebar-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
 }

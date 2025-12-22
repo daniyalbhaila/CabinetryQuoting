@@ -75,15 +75,19 @@ function renderBreakdown(calc, item) {
     const { breakdown } = calc;
     const { itemData, ratesUsed, exchangeRate } = breakdown;
 
-    const sections = [];
+    const physicalSections = [];
+    const financialSections = [];
+    const summarySections = [];
+
+    // --- Physical Calculations (Left Column) ---
 
     // Section 1: Linear Conversions
     if (calc.totalLF > 0) {
-        sections.push(`
+        physicalSections.push(`
             <div class="breakdown-section">
                 <div class="breakdown-section-title">
                     <span class="breakdown-section-number">1</span>
-                    Linear Feet to Meters Conversion
+                    Linear Feet to Meters
                 </div>
                 ${itemData.upperLF > 0 ? `
                     <div class="breakdown-step">
@@ -114,7 +118,7 @@ function renderBreakdown(calc, item) {
         doorAreaSteps += `
             <div class="breakdown-step">
                 <div class="breakdown-label">Upper Doors</div>
-                <div class="breakdown-formula">${breakdown.upperM.toFixed(4)} m × ${(calc.dims.upperHt / 1000).toFixed(3)} m (${calc.dims.upperHt}mm height)</div>
+                <div class="breakdown-formula">${breakdown.upperM.toFixed(4)} m × ${(calc.dims.upperHt / 1000).toFixed(3)} m (${calc.dims.upperHt}mm)</div>
                 <div class="breakdown-result">${upperArea.toFixed(4)} m²</div>
             </div>
         `;
@@ -124,7 +128,7 @@ function renderBreakdown(calc, item) {
         doorAreaSteps += `
             <div class="breakdown-step">
                 <div class="breakdown-label">Base Doors</div>
-                <div class="breakdown-formula">${breakdown.baseM.toFixed(4)} m × ${(calc.dims.baseHt / 1000).toFixed(3)} m (${calc.dims.baseHt}mm height)</div>
+                <div class="breakdown-formula">${breakdown.baseM.toFixed(4)} m × ${(calc.dims.baseHt / 1000).toFixed(3)} m (${calc.dims.baseHt}mm)</div>
                 <div class="breakdown-result">${baseArea.toFixed(4)} m²</div>
             </div>
         `;
@@ -134,13 +138,13 @@ function renderBreakdown(calc, item) {
         doorAreaSteps += `
             <div class="breakdown-step">
                 <div class="breakdown-label">Pantry Doors</div>
-                <div class="breakdown-formula">${breakdown.pantryM.toFixed(4)} m × ${(calc.dims.ceilingMm / 1000).toFixed(3)} m (${calc.dims.ceilingMm}mm ceiling height)</div>
+                <div class="breakdown-formula">${breakdown.pantryM.toFixed(4)} m × ${(calc.dims.ceilingMm / 1000).toFixed(3)} m (${calc.dims.ceilingMm}mm)</div>
                 <div class="breakdown-result">${pantryArea.toFixed(4)} m²</div>
             </div>
         `;
     }
 
-    sections.push(`
+    physicalSections.push(`
         <div class="breakdown-section">
             <div class="breakdown-section-title">
                 <span class="breakdown-section-number">2</span>
@@ -163,23 +167,10 @@ function renderBreakdown(calc, item) {
         const upperTotal = upperSides + upperBackBottom + upperFront;
         carcassAreaSteps += `
             <div class="breakdown-step">
-                <div class="breakdown-label">Upper Carcass - Sides</div>
-                <div class="breakdown-formula">2 × ${(calc.dims.upperHt / 1000).toFixed(3)} m (ht) × ${(calc.dims.upperDp / 1000).toFixed(3)} m (dp)</div>
-                <div class="breakdown-result">${upperSides.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Upper Carcass - Back & Bottom</div>
-                <div class="breakdown-formula">2 × ${breakdown.upperM.toFixed(4)} m × ${(calc.dims.upperDp / 1000).toFixed(3)} m (dp)</div>
-                <div class="breakdown-result">${upperBackBottom.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Upper Carcass - Front Face</div>
-                <div class="breakdown-formula">${breakdown.upperM.toFixed(4)} m × ${(calc.dims.upperHt / 1000).toFixed(3)} m (ht)</div>
-                <div class="breakdown-result">${upperFront.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Upper Carcass Subtotal</div>
-                <div class="breakdown-result">${upperTotal.toFixed(4)} m²</div>
+                <div class="breakdown-label">Upper Carcass (Total: ${upperTotal.toFixed(4)} m²)</div>
+                <div class="breakdown-sub-formula">Sides: 2 × ${(calc.dims.upperHt / 1000).toFixed(3)}m(h) × ${(calc.dims.upperDp / 1000).toFixed(3)}m(d) = ${upperSides.toFixed(4)}</div>
+                <div class="breakdown-sub-formula">Back/Bot: 2 × ${breakdown.upperM.toFixed(4)}m(w) × ${(calc.dims.upperDp / 1000).toFixed(3)}m(d) = ${upperBackBottom.toFixed(4)}</div>
+                <div class="breakdown-sub-formula">Front: ${breakdown.upperM.toFixed(4)}m(w) × ${(calc.dims.upperHt / 1000).toFixed(3)}m(h) = ${upperFront.toFixed(4)}</div>
             </div>
         `;
     }
@@ -190,23 +181,10 @@ function renderBreakdown(calc, item) {
         const baseTotal = baseSides + baseBackBottom + baseFront;
         carcassAreaSteps += `
             <div class="breakdown-step">
-                <div class="breakdown-label">Base Carcass - Sides</div>
-                <div class="breakdown-formula">2 × ${(calc.dims.baseHt / 1000).toFixed(3)} m (ht) × ${(calc.dims.baseDp / 1000).toFixed(3)} m (dp)</div>
-                <div class="breakdown-result">${baseSides.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Base Carcass - Back & Bottom</div>
-                <div class="breakdown-formula">2 × ${breakdown.baseM.toFixed(4)} m × ${(calc.dims.baseDp / 1000).toFixed(3)} m (dp)</div>
-                <div class="breakdown-result">${baseBackBottom.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Base Carcass - Front Face</div>
-                <div class="breakdown-formula">${breakdown.baseM.toFixed(4)} m × ${(calc.dims.baseHt / 1000).toFixed(3)} m (ht)</div>
-                <div class="breakdown-result">${baseFront.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Base Carcass Subtotal</div>
-                <div class="breakdown-result">${baseTotal.toFixed(4)} m²</div>
+                <div class="breakdown-label">Base Carcass (Total: ${baseTotal.toFixed(4)} m²)</div>
+                <div class="breakdown-sub-formula">Sides: 2 × ${(calc.dims.baseHt / 1000).toFixed(3)}m(h) × ${(calc.dims.baseDp / 1000).toFixed(3)}m(d) = ${baseSides.toFixed(4)}</div>
+                <div class="breakdown-sub-formula">Back/Bot: 2 × ${breakdown.baseM.toFixed(4)}m(w) × ${(calc.dims.baseDp / 1000).toFixed(3)}m(d) = ${baseBackBottom.toFixed(4)}</div>
+                <div class="breakdown-sub-formula">Front: ${breakdown.baseM.toFixed(4)}m(w) × ${(calc.dims.baseHt / 1000).toFixed(3)}m(h) = ${baseFront.toFixed(4)}</div>
             </div>
         `;
     }
@@ -217,32 +195,19 @@ function renderBreakdown(calc, item) {
         const pantryTotal = pantrySides + pantryBackBottom + pantryFront;
         carcassAreaSteps += `
             <div class="breakdown-step">
-                <div class="breakdown-label">Pantry Carcass - Sides</div>
-                <div class="breakdown-formula">2 × ${(calc.dims.ceilingMm / 1000).toFixed(3)} m (ceiling) × ${(calc.dims.pantryDp / 1000).toFixed(3)} m (dp)</div>
-                <div class="breakdown-result">${pantrySides.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Pantry Carcass - Back & Bottom</div>
-                <div class="breakdown-formula">2 × ${breakdown.pantryM.toFixed(4)} m × ${(calc.dims.pantryDp / 1000).toFixed(3)} m (dp)</div>
-                <div class="breakdown-result">${pantryBackBottom.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Pantry Carcass - Front Face</div>
-                <div class="breakdown-formula">${breakdown.pantryM.toFixed(4)} m × ${(calc.dims.ceilingMm / 1000).toFixed(3)} m (ceiling)</div>
-                <div class="breakdown-result">${pantryFront.toFixed(4)} m²</div>
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Pantry Carcass Subtotal</div>
-                <div class="breakdown-result">${pantryTotal.toFixed(4)} m²</div>
+                <div class="breakdown-label">Pantry Carcass (Total: ${pantryTotal.toFixed(4)} m²)</div>
+                <div class="breakdown-sub-formula">Sides: 2 × ${(calc.dims.ceilingMm / 1000).toFixed(3)}m(h) × ${(calc.dims.pantryDp / 1000).toFixed(3)}m(d) = ${pantrySides.toFixed(4)}</div>
+                <div class="breakdown-sub-formula">Back/Bot: 2 × ${breakdown.pantryM.toFixed(4)}m(w) × ${(calc.dims.pantryDp / 1000).toFixed(3)}m(d) = ${pantryBackBottom.toFixed(4)}</div>
+                <div class="breakdown-sub-formula">Front: ${breakdown.pantryM.toFixed(4)}m(w) × ${(calc.dims.ceilingMm / 1000).toFixed(3)}m(h) = ${pantryFront.toFixed(4)}</div>
             </div>
         `;
     }
 
-    sections.push(`
+    physicalSections.push(`
         <div class="breakdown-section">
             <div class="breakdown-section-title">
                 <span class="breakdown-section-number">3</span>
-                Carcass Surface Area (Box Construction)
+                Carcass Surface Area
             </div>
             ${carcassAreaSteps}
             <div class="breakdown-step">
@@ -252,8 +217,10 @@ function renderBreakdown(calc, item) {
         </div>
     `);
 
+    // --- Financial Calculations (Right Column) ---
+
     // Section 4: Component Costs (USD)
-    sections.push(`
+    financialSections.push(`
         <div class="breakdown-section">
             <div class="breakdown-section-title">
                 <span class="breakdown-section-number">4</span>
@@ -262,38 +229,34 @@ function renderBreakdown(calc, item) {
             ${itemData.openShelf ? `
                 <div class="breakdown-step">
                     <div class="breakdown-label">Door Cost</div>
-                    <div class="breakdown-formula">Open shelf - no door cost</div>
                     <div class="breakdown-result">$0.00</div>
                 </div>
             ` : `
                 <div class="breakdown-step">
                     <div class="breakdown-label">Door Cost</div>
-                    <div class="breakdown-formula">${breakdown.doorArea.toFixed(4)} m² × $${breakdown.doorRate}/m² (${itemData.finish} ${itemData.shaped ? 'shaped' : 'unshaped'})</div>
+                    <div class="breakdown-formula">${breakdown.doorArea.toFixed(4)} m² × $${breakdown.doorRate}/m²</div>
                     <div class="breakdown-result">${formatCurrency(breakdown.doorCost).replace(' CAD', ' USD')}</div>
                 </div>
             `}
             <div class="breakdown-step">
                 <div class="breakdown-label">Carcass Cost</div>
-                <div class="breakdown-formula">${breakdown.carcassArea.toFixed(4)} m² × carcass rate</div>
+                <div class="breakdown-formula">${breakdown.carcassArea.toFixed(4)} m² × rate</div>
                 <div class="breakdown-result">${formatCurrency(breakdown.carcassCost).replace(' CAD', ' USD')}</div>
             </div>
             ${itemData.drawers > 0 ? `
                 <div class="breakdown-step">
-                    <div class="breakdown-label">Drawer Cost</div>
-                    <div class="breakdown-formula">${itemData.drawers} drawers × $${ratesUsed.drawerRate}/drawer</div>
+                    <div class="breakdown-label">Drawers (${itemData.drawers})</div>
                     <div class="breakdown-result">${formatCurrency(breakdown.drawerCost).replace(' CAD', ' USD')}</div>
                 </div>
             ` : ''}
             ${itemData.accessories > 0 ? `
                 <div class="breakdown-step">
-                    <div class="breakdown-label">Accessory Cost</div>
-                    <div class="breakdown-formula">${itemData.accessories} accessories × $${ratesUsed.accessoryRate}/accessory</div>
+                    <div class="breakdown-label">Accessories (${itemData.accessories})</div>
                     <div class="breakdown-result">${formatCurrency(breakdown.accessoryCost).replace(' CAD', ' USD')}</div>
                 </div>
             ` : ''}
             <div class="breakdown-step">
-                <div class="breakdown-label">Gross Cabinetry Total (USD)</div>
-                <div class="breakdown-formula">Sum of all component costs</div>
+                <div class="breakdown-label">Gross Cabinetry Total</div>
                 <div class="breakdown-result">${formatCurrency(breakdown.cabinetryGross).replace(' CAD', ' USD')}</div>
             </div>
         </div>
@@ -301,15 +264,15 @@ function renderBreakdown(calc, item) {
 
     // Section 5: Discount Application
     if (ratesUsed.discountRate > 0) {
-        sections.push(`
+        financialSections.push(`
             <div class="breakdown-section">
                 <div class="breakdown-section-title">
                     <span class="breakdown-section-number">5</span>
-                    Discount Application
+                    Discount
                 </div>
                 <div class="breakdown-step">
-                    <div class="breakdown-label">Discount</div>
-                    <div class="breakdown-formula">${formatCurrency(breakdown.cabinetryGross).replace(' CAD', ' USD')} × (1 - ${(ratesUsed.discountRate * 100).toFixed(1)}%)</div>
+                    <div class="breakdown-label">Discount Applied</div>
+                    <div class="breakdown-formula">${(ratesUsed.discountRate * 100).toFixed(1)}% Off</div>
                     <div class="breakdown-result">${formatCurrency(breakdown.cabinetryUSD).replace(' CAD', ' USD')}</div>
                 </div>
             </div>
@@ -317,98 +280,99 @@ function renderBreakdown(calc, item) {
     }
 
     // Section 6: Currency Conversion + Additional Items
-    const sectionNum = sections.length + 1;
     const cabinetryCAD = breakdown.cabinetryUSD * exchangeRate;
 
-    sections.push(`
+    financialSections.push(`
         <div class="breakdown-section">
             <div class="breakdown-section-title">
-                <span class="breakdown-section-number">${sectionNum}</span>
-                Currency Conversion & Additional Items
+                <span class="breakdown-section-number">6</span>
+                Currency & Additional
             </div>
             <div class="breakdown-step">
-                <div class="breakdown-label">Cabinetry in CAD</div>
-                <div class="breakdown-formula">${formatCurrency(breakdown.cabinetryUSD).replace(' CAD', ' USD')} × ${exchangeRate} exchange rate</div>
+                <div class="breakdown-label">Cabinetry (CAD)</div>
+                <div class="breakdown-formula">Exch. Rate: ${exchangeRate}</div>
                 <div class="breakdown-result">${formatCurrency(cabinetryCAD)}</div>
             </div>
             ${breakdown.additionalTotal > 0 ? `
                 ${itemData.additionalItems.map(item => `
                     <div class="breakdown-step">
-                        <div class="breakdown-label">Additional: ${item.description || 'Custom Item'}</div>
+                        <div class="breakdown-label">${item.description || 'Custom Item'}</div>
                         <div class="breakdown-result">${formatCurrency(item.price)}</div>
                     </div>
                 `).join('')}
                 <div class="breakdown-step">
-                    <div class="breakdown-label">Total Cabinetry (with additional items)</div>
-                    <div class="breakdown-formula">${formatCurrency(cabinetryCAD)} + ${formatCurrency(breakdown.additionalTotal)}</div>
+                    <div class="breakdown-label">Total Cabinetry</div>
                     <div class="breakdown-result">${formatCurrency(calc.cabinetry)}</div>
                 </div>
             ` : ''}
         </div>
     `);
 
+    // --- Summary Sections (Full Width) ---
+
     // Section 7: Shipping & Install
     if (calc.totalLF > 0) {
-        const sectionNum = sections.length + 1;
-        sections.push(`
+        summarySections.push(`
             <div class="breakdown-section">
                 <div class="breakdown-section-title">
-                    <span class="breakdown-section-number">${sectionNum}</span>
-                    Shipping & Installation (CAD)
+                    <span class="breakdown-section-number">7</span>
+                    Shipping & Installation
                 </div>
-                <div class="breakdown-step">
-                    <div class="breakdown-label">Shipping</div>
-                    <div class="breakdown-formula">${calc.totalLF} LF × $${ratesUsed.shippingRate}/LF</div>
-                    <div class="breakdown-result">${formatCurrency(calc.shipping)}</div>
-                </div>
-                <div class="breakdown-step">
-                    <div class="breakdown-label">Installation</div>
-                    <div class="breakdown-formula">${calc.totalLF} LF × $${ratesUsed.installRate}/LF</div>
-                    <div class="breakdown-result">${formatCurrency(calc.install)}</div>
+                <div class="breakdown-grid-row">
+                    <div class="breakdown-step">
+                        <div class="breakdown-label">Shipping</div>
+                        <div class="breakdown-formula">$${ratesUsed.shippingRate}/LF</div>
+                        <div class="breakdown-result">${formatCurrency(calc.shipping)}</div>
+                    </div>
+                    <div class="breakdown-step">
+                        <div class="breakdown-label">Installation</div>
+                        <div class="breakdown-formula">$${ratesUsed.installRate}/LF</div>
+                        <div class="breakdown-result">${formatCurrency(calc.install)}</div>
+                    </div>
                 </div>
             </div>
         `);
     }
 
-    // Section 8: Subtotal
-    const subtotalNum = sections.length + 1;
-    sections.push(`
+    // Section 8 & 9: Subtotal & Markup
+    summarySections.push(`
         <div class="breakdown-section">
             <div class="breakdown-section-title">
-                <span class="breakdown-section-number">${subtotalNum}</span>
-                Subtotal
+                <span class="breakdown-section-number">8</span>
+                Final Calculation
             </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Subtotal (before markup)</div>
-                <div class="breakdown-formula">Cabinetry + Shipping + Install</div>
-                <div class="breakdown-result">${formatCurrency(calc.subtotal)}</div>
-            </div>
-        </div>
-    `);
-
-    // Section 9: Markup
-    const markupNum = sections.length + 1;
-    sections.push(`
-        <div class="breakdown-section">
-            <div class="breakdown-section-title">
-                <span class="breakdown-section-number">${markupNum}</span>
-                Markup Application
-            </div>
-            <div class="breakdown-step">
-                <div class="breakdown-label">Markup</div>
-                <div class="breakdown-formula">${formatCurrency(calc.subtotal)} × (1 + ${(ratesUsed.markupRate * 100).toFixed(1)}%)</div>
-                <div class="breakdown-result">${formatCurrency(calc.finalPrice)}</div>
+            <div class="breakdown-grid-row">
+                <div class="breakdown-step">
+                    <div class="breakdown-label">Subtotal</div>
+                    <div class="breakdown-result">${formatCurrency(calc.subtotal)}</div>
+                </div>
+                <div class="breakdown-step">
+                    <div class="breakdown-label">Markup (${(ratesUsed.markupRate * 100).toFixed(1)}%)</div>
+                    <div class="breakdown-result">${formatCurrency(calc.finalPrice)}</div>
+                </div>
             </div>
         </div>
     `);
 
     // Final Total
-    sections.push(`
+    summarySections.push(`
         <div class="breakdown-total">
             <div class="breakdown-total-label">Final Price</div>
             <div class="breakdown-total-value">${formatCurrency(calc.finalPrice)}</div>
         </div>
     `);
 
-    return sections.join('');
+    return `
+        <div class="breakdown-columns">
+            <div class="breakdown-column">
+                ${physicalSections.join('')}
+            </div>
+            <div class="breakdown-column">
+                ${financialSections.join('')}
+            </div>
+        </div>
+        <div class="breakdown-summary-full">
+            ${summarySections.join('')}
+        </div>
+    `;
 }

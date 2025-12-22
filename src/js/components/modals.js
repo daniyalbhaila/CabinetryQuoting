@@ -20,6 +20,9 @@ import {
 export function initModals(onConfigChange) {
     setupHelpModal();
     setupConfigModal(onConfigChange);
+    setupHistoryModal();
+    setupProjectDetailsModal();
+    setupProjectOverridesModal();
 }
 
 /**
@@ -42,6 +45,120 @@ function setupHelpModal() {
     if (closeHelpBtn2) {
         closeHelpBtn2.addEventListener('click', hideHelp);
     }
+}
+
+/**
+ * Setup history modal listeners
+ */
+function setupHistoryModal() {
+    // History button in header
+    const showHistoryBtn = getElementById('showHistoryBtn');
+    if (showHistoryBtn) {
+        showHistoryBtn.addEventListener('click', showHistory);
+    }
+
+    // Close button
+    const closeHistoryBtn = getElementById('closeHistoryBtn');
+    if (closeHistoryBtn) {
+        closeHistoryBtn.addEventListener('click', hideHistory);
+    }
+}
+
+/**
+ * Show history modal
+ */
+export function showHistory() {
+    showModal('historyModal');
+}
+
+/**
+ * Hide history modal
+ */
+export function hideHistory() {
+    hideModal('historyModal');
+}
+
+/**
+ * Setup project details modal listeners
+ */
+function setupProjectDetailsModal() {
+    // Edit button in sidebar
+    const editBtn = getElementById('editProjectDetailsBtn');
+    if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card click
+            showProjectDetails();
+        });
+    }
+
+    // Card click
+    const card = getElementById('projectSummaryCard');
+    if (card) {
+        card.addEventListener('click', showProjectDetails);
+    }
+
+    // Close button
+    const closeBtn = getElementById('closeProjectDetailsBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideProjectDetails);
+    }
+
+    // Done button
+    const doneBtn = getElementById('saveProjectDetailsBtn');
+    if (doneBtn) {
+        doneBtn.addEventListener('click', hideProjectDetails);
+    }
+}
+
+/**
+ * Show project details modal
+ */
+export function showProjectDetails() {
+    showModal('projectDetailsModal');
+}
+
+/**
+ * Hide project details modal
+ */
+export function hideProjectDetails() {
+    hideModal('projectDetailsModal');
+}
+
+/**
+ * Setup project overrides modal listeners
+ */
+function setupProjectOverridesModal() {
+    // Show button in sidebar
+    const showBtn = getElementById('showProjectOverridesBtn');
+    if (showBtn) {
+        showBtn.addEventListener('click', showProjectOverrides);
+    }
+
+    // Close button
+    const closeBtn = getElementById('closeProjectOverridesBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideProjectOverrides);
+    }
+
+    // Done button
+    const doneBtn = getElementById('saveProjectOverridesBtn');
+    if (doneBtn) {
+        doneBtn.addEventListener('click', hideProjectOverrides);
+    }
+}
+
+/**
+ * Show project overrides modal
+ */
+export function showProjectOverrides() {
+    showModal('projectOverridesModal');
+}
+
+/**
+ * Hide project overrides modal
+ */
+export function hideProjectOverrides() {
+    hideModal('projectOverridesModal');
 }
 
 /**

@@ -56,16 +56,22 @@ npm run dev
 - **Additional Items**: Add custom line items with CAD pricing per room
 
 ### 🎨 User Interface
-- **Dark Theme**: Professional dark UI with gold accents
+- **Modern Design**: Linear-inspired monochrome UI with clean visual hierarchy
+- **Professional Aesthetic**: White accents on dark backgrounds with subtle translucent borders
+- **Lucide Icons**: Modern icon system throughout the interface
+- **Backdrop Blur**: Glassmorphism effects on modals and header
 - **Responsive Design**: Works on desktop and mobile
 - **Progressive Disclosure**: Basic fields always visible, advanced options collapsed
-- **Collapsible Sections**: Organize settings and line items
-- **Sticky Header**: Total always visible while scrolling
-- **Visual Feedback**: Smooth animations and hover effects
+- **Modal Workflow**: Dedicated modals for History, Project Details, and Overrides
+- **Linear Row Style**: Flat, clean line items with hover effects
+- **Icon-Only Header**: Compact header with icon buttons for cleaner appearance
+- **Sticky Header**: Navigation always visible while scrolling
+- **Visual Feedback**: Smooth animations, hover effects, and backdrop blur
 - **Status Indicators**: Clear badges showing custom vs. global settings
 - **Keyboard Friendly**: Tab navigation support
 - **Help Modal**: Built-in user guide accessible from header
-- **Clean Hierarchy**: Visual spacing makes sections easy to scan
+- **Clean Hierarchy**: Visual spacing and indentation makes sections easy to scan
+- **Bosco Branding**: Professional logo and favicon suite
 
 ---
 
@@ -834,10 +840,11 @@ export const CEILING_TO_UPPER_HT = {
 - **Authentication**: sessionStorage for session management
 - **Styling**: CSS3 with CSS Custom Properties (variables)
 - **Fonts**:
-  - DM Sans (body text, UI elements)
+  - DM Sans / Inter (body text, UI elements)
   - Space Mono (monospace, numbers, currency)
-- **Icons**: Inline SVG (no icon library needed)
-- **File Size**: ~80KB (all files combined, uncompressed)
+- **Icons**: Lucide Icons (loaded via CDN, ~15KB)
+- **Assets**: Logo (SVG) + full favicon suite
+- **File Size**: ~90KB (all files combined, uncompressed)
 - **Performance**: All calculations client-side (instant updates), debounced auto-save
 - **Responsive**: Mobile-first design with breakpoints at 768px and 1200px
 - **Security**: XSS protection via input escaping
@@ -870,7 +877,8 @@ Proprietary - Bosco Cabinetry Internal Use Only
 
 ## Changelog
 
-### Version 3.0.0 (December 2024) - 3-Tier Configuration System
+### Version 3.0.0 (December 2024) - 3-Tier Configuration System + Modern UI
+**Configuration System:**
 - **NEW**: 3-tier configuration system (Global → Quote → Line Item)
 - **NEW**: Global Settings modal for company-wide defaults
 - **NEW**: Quote-level overrides in Project Settings dropdown
@@ -881,6 +889,24 @@ Proprietary - Bosco Cabinetry Internal Use Only
 - **NEW**: Additional items per line item (custom CAD pricing)
 - **NEW**: Visual status indicators showing custom vs. default settings
 - **NEW**: Reset buttons to clear overrides back to defaults
+
+**UI/Design System:**
+- **NEW**: Linear-inspired monochrome design (white accents on dark)
+- **NEW**: Lucide Icons integration (modern icon library)
+- **NEW**: History Modal for browsing saved quotes
+- **NEW**: Project Details Modal for editing client/project info
+- **NEW**: Project Overrides Modal for quote-level customization
+- **NEW**: Backdrop blur effects on modals and header (glassmorphism)
+- **NEW**: Linear row style for line items (flat, clean, hover effects)
+- **NEW**: Icon-only header buttons for cleaner appearance
+- **NEW**: Bosco logo and full favicon suite
+- **NEW**: 2-column breakdown modal (Physical | Financial calculations)
+- **IMPROVED**: Compact spacing throughout for better information density
+- **IMPROVED**: Condensed calculation formulas in breakdown modal
+- **IMPROVED**: Primary buttons with white gradient and glow effect
+- **IMPROVED**: Translucent borders and subtle shadows for depth
+
+**Functionality:**
 - **IMPROVED**: 3-column Basic layout (Measurements | Finish & Options | Room Settings)
 - **IMPROVED**: Cleaner visual hierarchy with better spacing
 - **IMPROVED**: All calculations now use cascading 3-tier resolution
@@ -889,7 +915,7 @@ Proprietary - Bosco Cabinetry Internal Use Only
 - **FIXED**: Separator visual issues in Advanced sections
 - **REMOVED**: All emojis from UI for professional appearance
 - **MIGRATION**: Auto-migrates v1/v2 quotes to v3 schema
-- **DOCS**: Updated README and CLAUDE.md with 3-tier system documentation
+- **DOCS**: Updated README and CLAUDE.md with 3-tier system and design documentation
 
 ### Version 2.0.0 (December 2024)
 - **Major refactor**: Modular ES6 architecture

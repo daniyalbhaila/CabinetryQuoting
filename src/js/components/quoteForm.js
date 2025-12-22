@@ -23,6 +23,9 @@ export function initQuoteForm(onFormChange, onQuoteLoad) {
     setupQuoteHistoryListeners(onQuoteLoad);
     setupCardToggles();
     setupQuoteSettingsCard(onFormChange);
+
+    // Initial summary update
+    updateProjectSummary();
 }
 
 /**
@@ -42,7 +45,10 @@ function setupFormListeners(onFormChange) {
     formInputs.forEach((inputId) => {
         const input = getElementById(inputId);
         if (input) {
-            input.addEventListener('change', onFormChange);
+            input.addEventListener('change', () => {
+                if (onFormChange) onFormChange();
+                updateProjectSummary();
+            });
         }
     });
 }
@@ -99,6 +105,8 @@ export function loadQuoteData(quoteData) {
     setValue('projectType', quoteData.projectType || 'full');
     setValue('carcassSupplier', quoteData.carcassSupplier || 'holike');
     setValue('defaultCeiling', quoteData.defaultCeiling || '8');
+
+    updateProjectSummary();
 }
 
 /**
@@ -189,7 +197,7 @@ export function renderQuoteHistory() {
                 </div>
                 <div class="history-item-actions">
                     <button data-action="delete" data-quote-id="${quote.id}">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </div>
@@ -199,6 +207,10 @@ export function renderQuoteHistory() {
 
     // Add event listeners to history items
     attachHistoryItemListeners();
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }
 
 /**
@@ -257,15 +269,10 @@ function setupQuoteSettingsCard(onOverrideChange) {
     // Initialize with global defaults displayed
     updateQuoteSettingsDisplay();
 
-    // Setup toggle functionality
-    const toggle = getElementById('quoteOverrideToggle');
-    const content = getElementById('quoteOverrideContent');
-    if (toggle && content) {
-        toggle.addEventListener('click', () => {
-            toggle.classList.toggle('active');
-            content.classList.toggle('show');
-        });
-    }
+    // Initialize with global defaults displayed
+    updateQuoteSettingsDisplay();
+
+
 
     // Setup input listeners for quote overrides
     const overrideInputs = [
@@ -338,30 +345,30 @@ export function getQuoteOverrides() {
     const overrides = {};
 
     // Rate overrides
-    const shippingRate = getElementById('quoteShippingRate')?.value;
-    if (shippingRate !== '') overrides.shippingRate = parseFloat(shippingRate);
+    const shippingInput = getElementById('quoteShippingRate');
+    if (shippingInput && shippingInput.value !== '') overrides.shippingRate = parseFloat(shippingInput.value);
 
-    const installRate = getElementById('quoteInstallRate')?.value;
-    if (installRate !== '') overrides.installRate = parseFloat(installRate);
+    const installInput = getElementById('quoteInstallRate');
+    if (installInput && installInput.value !== '') overrides.installRate = parseFloat(installInput.value);
 
-    const drawerRate = getElementById('quoteDrawerRate')?.value;
-    if (drawerRate !== '') overrides.drawerRate = parseFloat(drawerRate);
+    const drawerInput = getElementById('quoteDrawerRate');
+    if (drawerInput && drawerInput.value !== '') overrides.drawerRate = parseFloat(drawerInput.value);
 
-    const accessoryRate = getElementById('quoteAccessoryRate')?.value;
-    if (accessoryRate !== '') overrides.accessoryRate = parseFloat(accessoryRate);
+    const accessoryInput = getElementById('quoteAccessoryRate');
+    if (accessoryInput && accessoryInput.value !== '') overrides.accessoryRate = parseFloat(accessoryInput.value);
 
-    const markupRate = getElementById('quoteMarkupRate')?.value;
-    if (markupRate !== '') overrides.markupRate = parseFloat(markupRate);
+    const markupInput = getElementById('quoteMarkupRate');
+    if (markupInput && markupInput.value !== '') overrides.markupRate = parseFloat(markupInput.value);
 
-    const discountRate = getElementById('quoteDiscountRate')?.value;
-    if (discountRate !== '') overrides.discountRate = parseFloat(discountRate);
+    const discountInput = getElementById('quoteDiscountRate');
+    if (discountInput && discountInput.value !== '') overrides.discountRate = parseFloat(discountInput.value);
 
     // Dimension overrides
-    const upperHt = getElementById('quoteDefaultUpperHt')?.value;
-    if (upperHt !== '') overrides.defaultUpperHt = parseFloat(upperHt);
+    const upperHtInput = getElementById('quoteDefaultUpperHt');
+    if (upperHtInput && upperHtInput.value !== '') overrides.defaultUpperHt = parseFloat(upperHtInput.value);
 
-    const baseHt = getElementById('quoteDefaultBaseHt')?.value;
-    if (baseHt !== '') overrides.defaultBaseHt = parseFloat(baseHt);
+    const baseHtInput = getElementById('quoteDefaultBaseHt');
+    if (baseHtInput && baseHtInput.value !== '') overrides.defaultBaseHt = parseFloat(baseHtInput.value);
 
     return overrides;
 }
@@ -389,7 +396,7 @@ function updateQuoteSettingsDisplay() {
     const overrideCount = Object.keys(overrides).length;
 
     // Update badge
-    const badge = getElementById('quoteSettingsBadge');
+    const badge = getElementById('sidebarOverridesBadge');
     if (badge) {
         if (overrideCount > 0) {
             badge.classList.add('has-overrides');
@@ -434,5 +441,39 @@ function updateSourceIndicator(sourceId, inputId, globalValue, label) {
     } else {
         sourceEl.className = 'setting-source';
         sourceEl.textContent = `Global: ${globalValue}`;
+    }
+}
+
+/**
+ * Update the project summary card in the sidebar
+ */
+export function updateProjectSummary() {
+    const clientName = getElementById('clientName')?.value || 'Client Name';
+    const projectName = getElementById('projectName')?.value || 'Project Name';
+    const date = getElementById('quoteDate')?.value;
+    const projectType = getElementById('projectType')?.value;
+
+    const summaryClient = getElementById('summaryClientName');
+    const summaryProject = getElementById('summaryProjectName');
+    const summaryDate = getElementById('summaryDate');
+    const summaryType = getElementById('summaryType');
+
+    if (summaryClient) summaryClient.textContent = clientName || 'Client Name';
+    if (summaryProject) summaryProject.textContent = projectName || 'Project Name';
+    if (summaryDate) summaryDate.textContent = date ? formatDate(date) : 'Date';
+    if (summaryType) summaryType.textContent = projectType === 'single' ? 'Single Project' : 'Full House';
+
+    // Update override indicator on summary card
+    const overrides = getQuoteOverrides();
+    const hasOverrides = Object.keys(overrides).length > 0;
+    const summaryCard = getElementById('projectSummaryCard');
+
+    if (summaryCard) {
+        if (hasOverrides) {
+            summaryCard.classList.add('has-overrides');
+            // Add or update indicator if not exists (handled via CSS ::after usually, but we can toggle class)
+        } else {
+            summaryCard.classList.remove('has-overrides');
+        }
     }
 }

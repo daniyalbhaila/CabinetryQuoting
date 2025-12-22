@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bosco Wizard | Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #c9a227;
+            --primary-dark: #a1821f;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            width: 100%;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+
+        .step {
+            position: relative;
+            z-index: 1;
+            background: var(--bg);
+            padding: 0 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .step.active .step-circle {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .step.completed .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .step.active .step-label {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        /* Main Card */
+        .wizard-card {
+            background: var(--card);
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-content {
+            padding: 2.5rem;
+            min-height: 400px;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+
+        /* Selection Cards */
+        .selection-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .selection-card {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .selection-card:hover {
+            border-color: var(--primary);
+            background: rgba(201, 162, 39, 0.05);
+        }
+
+        .selection-card.selected {
+            border-color: var(--primary);
+            background: rgba(201, 162, 39, 0.1);
+        }
+
+        .selection-card h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .selection-card p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Footer Actions */
+        .card-footer {
+            padding: 1.5rem 2.5rem;
+            background: #f9fafb;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">Bosco <span>Wizard</span></div>
+        <div style="font-size: 0.875rem; color: var(--text-muted);">New Quote #1024</div>
+    </header>
+
+    <div class="progress-container">
+        <div class="steps">
+            <div class="step completed">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Client</div>
+            </div>
+            <div class="step active">
+                <div class="step-circle">2</div>
+                <div class="step-label">Config</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <div class="step-label">Rooms</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">4</div>
+                <div class="step-label">Review</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-card">
+        <div class="card-content">
+            <h1 class="step-title">Project Configuration</h1>
+            <p class="step-desc">Set the global defaults for this project. You can override these later per room.</p>
+
+            <div class="form-group">
+                <label class="form-label">Project Type</label>
+                <div class="selection-grid">
+                    <div class="selection-card selected">
+                        <h3>Full House</h3>
+                        <p>Standard install rate ($100/LF) and markup (80%). Best for complete renovations.</p>
+                    </div>
+                    <div class="selection-card">
+                        <h3>Single Project</h3>
+                        <p>Higher install rate ($120/LF) and markup (90%). Best for single room jobs.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Default Ceiling Height</label>
+                <select class="form-input">
+                    <option>8 ft (Standard)</option>
+                    <option>9 ft</option>
+                    <option>10 ft</option>
+                    <option>11 ft</option>
+                    <option>12 ft</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Carcass Supplier</label>
+                <div class="selection-grid">
+                    <div class="selection-card selected">
+                        <h3>Holike</h3>
+                        <p>$65/sqm. Standard option.</p>
+                    </div>
+                    <div class="selection-card">
+                        <h3>Allure</h3>
+                        <p>$200/sqm. Premium option.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button class="btn btn-secondary">Back</button>
+            <button class="btn btn-primary">Next Step</button>
+        </div>
+    </div>
+
+    <script>
+        // Simple interaction
+        document.querySelectorAll('.selection-card').forEach(card => {
+            card.addEventListener('click', function () {
+                this.parentElement.querySelectorAll('.selection-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+    </script>
+</body>
+
+</html>

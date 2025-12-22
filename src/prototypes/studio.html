@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bosco Studio | Linear Style</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Linear-inspired Palette (adapted for Bosco) */
+            --bg-root: #08090A;
+            --bg-panel: #0F1115;
+            /* Slightly lighter for contrast */
+            --bg-hover: #1C1E24;
+            --bg-active: #23252B;
+
+            --border: #222429;
+            --border-hover: #35373C;
+
+            --text-primary: #F7F8F8;
+            --text-secondary: #8A8F98;
+            --text-tertiary: #575B62;
+
+            --accent: #D4AF37;
+            /* Bosco Gold */
+            --accent-dim: rgba(212, 175, 55, 0.15);
+
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --ease: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-root);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+            /* Linear uses small, dense type */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Layout Grid */
+        .app-container {
+            display: grid;
+            grid-template-columns: 240px 1fr 300px;
+            /* Tighter sidebar */
+            height: 100%;
+        }
+
+        /* Generic Panel Styles */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+
+        .panel:last-child {
+            border-right: none;
+            border-left: 1px solid var(--border);
+        }
+
+        /* Sidebar (Left) */
+        .sidebar {
+            background: var(--bg-root);
+            padding: 12px;
+        }
+
+        .sidebar-header {
+            padding: 0 8px 16px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .brand-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-dim);
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 16px 8px 8px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 8px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.1s var(--ease);
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--bg-active);
+            color: var(--text-primary);
+        }
+
+        .nav-item-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        .nav-item:hover .icon {
+            opacity: 1;
+        }
+
+        .price-tag {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .nav-item.active .price-tag {
+            color: var(--accent);
+        }
+
+        /* Main Editor (Center) */
+        .editor {
+            background: var(--bg-root);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            height: 48px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            justify-content: space-between;
+        }
+
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-tertiary);
+        }
+
+        .breadcrumb-active {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .editor-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 48px;
+            /* Generous padding like Linear */
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Linear-style Inputs */
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .ghost-input {
+            width: 100%;
+            background: transparent;
+            border: 1px solid transparent;
+            /* Invisible border by default */
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            padding: 8px 0;
+            transition: all 0.2s var(--ease);
+            border-radius: 4px;
+        }
+
+        .ghost-input:hover {
+            background: var(--bg-hover);
+            padding-left: 8px;
+            /* Shift text on hover */
+            margin-left: -8px;
+            /* Compensate layout */
+        }
+
+        .ghost-input:focus {
+            outline: none;
+            background: var(--bg-active);
+            padding-left: 8px;
+            margin-left: -8px;
+            border-color: var(--border-hover);
+        }
+
+        .title-input {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            padding: 0;
+        }
+
+        .title-input:hover,
+        .title-input:focus {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Grid Layouts */
+        .row {
+            display: flex;
+            gap: 24px;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        /* Option Cards (Linear Style) */
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+        }
+
+        .option-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.1s var(--ease);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-card:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-hover);
+        }
+
+        .option-card.selected {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .option-check {
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--text-tertiary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-card.selected .option-check {
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .option-check::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--bg-root);
+            border-radius: 50%;
+            display: none;
+        }
+
+        .option-card.selected .option-check::after {
+            display: block;
+        }
+
+        /* Properties Panel (Right) */
+        .properties {
+            background: var(--bg-panel);
+            padding: 0;
+        }
+
+        .prop-header {
+            height: 48px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-weight: 500;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .prop-list {
+            padding: 16px;
+        }
+
+        .prop-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .prop-row:last-child {
+            border-bottom: none;
+        }
+
+        .prop-label {
+            color: var(--text-secondary);
+        }
+
+        .prop-value {
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+
+        .total-section {
+            margin-top: auto;
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-root);
+        }
+
+        .total-display {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            letter-spacing: -0.02em;
+            margin-top: 8px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .btn:hover {
+            background: var(--bg-active);
+            border-color: var(--border-hover);
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: var(--bg-root);
+            border-color: transparent;
+        }
+
+        .btn-primary:hover {
+            background: #D1D5DB;
+            color: var(--bg-root);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Sidebar -->
+        <aside class="panel sidebar">
+            <div class="sidebar-header">
+                <div class="brand-dot"></div>
+                <span>Bosco Studio</span>
+            </div>
+
+            <div class="section-label">Client</div>
+            <div class="nav-item">
+                <div class="nav-item-content">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>John Smith</span>
+                </div>
+            </div>
+
+            <div class="section-label">Rooms</div>
+            <div class="nav-item active">
+                <div class="nav-item-content">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    </svg>
+                    <span>Kitchen</span>
+                </div>
+                <span class="price-tag">$5.2k</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-item-content">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    </svg>
+                    <span>Master Bath</span>
+                </div>
+                <span class="price-tag">$2.1k</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-item-content">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    </svg>
+                    <span>Laundry</span>
+                </div>
+                <span class="price-tag">$1.4k</span>
+            </div>
+
+            <div class="nav-item" style="margin-top: 8px; color: var(--text-tertiary);">
+                <div class="nav-item-content">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Add Room</span>
+                </div>
+                <span style="font-size: 10px; opacity: 0.5;">C</span>
+            </div>
+        </aside>
+
+        <!-- Editor -->
+        <main class="editor">
+            <div class="editor-header">
+                <div class="breadcrumbs">
+                    <span>Smith Residence</span>
+                    <span class="breadcrumb-separator">/</span>
+                    <span class="breadcrumb-active">Kitchen</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn">Duplicate</button>
+                    <button class="btn" style="color: var(--text-tertiary);">Delete</button>
+                </div>
+            </div>
+
+            <div class="editor-content">
+                <input type="text" class="ghost-input title-input" value="Kitchen">
+
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group">
+                            <label class="input-label">Upper Cabinets (LF)</label>
+                            <input type="text" class="ghost-input" value="10">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="input-group">
+                            <label class="input-label">Base Cabinets (LF)</label>
+                            <input type="text" class="ghost-input" value="15">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="input-group">
+                            <label class="input-label">Pantry (LF)</label>
+                            <input type="text" class="ghost-input" value="5">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Material</label>
+                    <div class="option-grid">
+                        <div class="option-card selected">
+                            <div class="option-check"></div>
+                            <span>PVC</span>
+                        </div>
+                        <div class="option-card">
+                            <div class="option-check"></div>
+                            <span>Paint</span>
+                        </div>
+                        <div class="option-card">
+                            <div class="option-check"></div>
+                            <span>Melamine</span>
+                        </div>
+                        <div class="option-card">
+                            <div class="option-check"></div>
+                            <span>Veneer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Door Profile</label>
+                    <div class="option-grid">
+                        <div class="option-card selected">
+                            <div class="option-check"></div>
+                            <span>Flat</span>
+                        </div>
+                        <div class="option-card">
+                            <div class="option-check"></div>
+                            <span>Shaker</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group">
+                            <label class="input-label">Drawers</label>
+                            <input type="text" class="ghost-input" value="8">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="input-group">
+                            <label class="input-label">Accessories</label>
+                            <input type="text" class="ghost-input" value="3">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Properties / Summary -->
+        <aside class="panel properties">
+            <div class="prop-header">Breakdown</div>
+
+            <div class="prop-list">
+                <div class="prop-row">
+                    <span class="prop-label">Total LF</span>
+                    <span class="prop-value">30 LF</span>
+                </div>
+                <div class="prop-row">
+                    <span class="prop-label">Cabinetry</span>
+                    <span class="prop-value">$5,240</span>
+                </div>
+                <div class="prop-row">
+                    <span class="prop-label">Shipping</span>
+                    <span class="prop-value">$1,800</span>
+                </div>
+                <div class="prop-row">
+                    <span class="prop-label">Install</span>
+                    <span class="prop-value">$3,000</span>
+                </div>
+            </div>
+
+            <div class="section-label" style="padding-left: 16px;">Adjustments</div>
+            <div class="prop-list" style="padding-top: 0;">
+                <div class="prop-row">
+                    <span class="prop-label">Markup</span>
+                    <span class="prop-value">80%</span>
+                </div>
+                <div class="prop-row">
+                    <span class="prop-label">Discount</span>
+                    <span class="prop-value">50%</span>
+                </div>
+            </div>
+
+            <div class="total-section">
+                <div class="prop-label">Grand Total (CAD)</div>
+                <div class="total-display">$15,111</div>
+                <button class="btn-primary" style="width: 100%; margin-top: 16px; padding: 10px;">Save Quote</button>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        // Simple selection logic
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', function () {
+                this.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function () {
+                if (this.querySelector('span').innerText === 'Add Room') return;
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+
+</html>

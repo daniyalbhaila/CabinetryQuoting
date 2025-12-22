@@ -68,6 +68,11 @@ class QuoteApp {
 
         // Render quote history
         renderQuoteHistory();
+
+        // Initialize Lucide icons
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     }
 
     /**
@@ -92,6 +97,7 @@ class QuoteApp {
             });
         }
     }
+
 
     /**
      * Load saved quote from localStorage

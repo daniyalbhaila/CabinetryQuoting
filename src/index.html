@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bosco Cabinetry | Quote Calculator</title>
 
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" href="assets/favicons/favicon.ico">
 
     <!-- Styles -->
     <link rel="stylesheet" href="./css/main.css">
     <link rel="stylesheet" href="./css/components.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 </head>
+
 <body>
     <!-- Password Protection Modal -->
     <div class="password-modal" id="passwordModal">
@@ -37,15 +45,20 @@
             </div>
 
             <h2>How to Use the Quote Calculator</h2>
-            <p>Welcome to the Bosco Cabinetry Quote Calculator. This guide will help you create accurate quotes for custom cabinetry projects.</p>
+            <p>Welcome to the Bosco Cabinetry Quote Calculator. This guide will help you create accurate quotes for
+                custom cabinetry projects.</p>
 
             <h3>Getting Started</h3>
             <ol>
-                <li><strong>Fill in Client Information</strong> - Add client name, project name, and date in the sidebar</li>
-                <li><strong>Configure Project Settings</strong> - Set project type, ceiling height, and default carcass supplier</li>
-                <li><strong>Adjust Rates (if needed)</strong> - Customize shipping, install, drawer, accessory, markup, and discount rates</li>
+                <li><strong>Fill in Client Information</strong> - Add client name, project name, and date in the sidebar
+                </li>
+                <li><strong>Configure Project Settings</strong> - Set project type, ceiling height, and default carcass
+                    supplier</li>
+                <li><strong>Adjust Rates (if needed)</strong> - Customize shipping, install, drawer, accessory, markup,
+                    and discount rates</li>
                 <li><strong>Add Line Items</strong> - Click "Add Item" to create rooms or cabinet sections</li>
-                <li><strong>Save Your Work</strong> - Click "Save Quote" in the sidebar to preserve your quote for later</li>
+                <li><strong>Save Your Work</strong> - Click "Save Quote" in the sidebar to preserve your quote for later
+                </li>
             </ol>
 
             <h3>📐 Adding Line Items</h3>
@@ -63,7 +76,8 @@
             <ul>
                 <li><strong>Ceiling Height</strong> - Override default ceiling height for this room</li>
                 <li><strong>Carcass Supplier</strong> - Override default supplier for this room</li>
-                <li><strong>Dimensions</strong> - Click "Override dimensions" to customize cabinet heights and depths</li>
+                <li><strong>Dimensions</strong> - Click "Override dimensions" to customize cabinet heights and depths
+                </li>
             </ul>
 
             <h3>💾 Saving & Loading Quotes</h3>
@@ -72,7 +86,8 @@
             <p><strong>Load a Quote:</strong> Click any quote in your Saved Quotes list.</p>
             <p><strong>Start Fresh:</strong> Click "New Quote" to start a new quote.</p>
 
-            <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+            <div
+                style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
                 <button class="btn btn-primary" id="closeHelpBtn2">Got It!</button>
             </div>
         </div>
@@ -86,11 +101,7 @@
                 <button class="btn btn-secondary" id="closeConfigBtn">✕ Close</button>
             </div>
             <div class="global-settings-info">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="16" x2="12" y2="12"/>
-                    <line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
+                <i data-lucide="info"></i>
                 <p>These are your default values for all quotes. You can override them per-quote or per-room.</p>
             </div>
             <div class="config-tabs">
@@ -122,11 +133,13 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Markup - Full House (%)</label>
-                        <input type="number" class="form-input config-rate-input" id="markupRateFull" value="80" step="0.1">
+                        <input type="number" class="form-input config-rate-input" id="markupRateFull" value="80"
+                            step="0.1">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Markup - Single Project (%)</label>
-                        <input type="number" class="form-input config-rate-input" id="markupRateSingle" value="90" step="0.1">
+                        <input type="number" class="form-input config-rate-input" id="markupRateSingle" value="90"
+                            step="0.1">
                     </div>
                 </div>
                 <div class="form-row">
@@ -137,7 +150,8 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">USD to CAD Exchange Rate</label>
-                    <input type="number" class="form-input config-rate-input" id="exchangeRate" value="1.42" step="0.01">
+                    <input type="number" class="form-input config-rate-input" id="exchangeRate" value="1.42"
+                        step="0.01">
                 </div>
             </div>
             <div class="config-tab-content" id="dimensionsTab">
@@ -171,104 +185,117 @@
                 </div>
             </div>
             <div class="config-tab-content" id="materialsTab">
-                <h3 style="font-size: 1rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Carcass Suppliers (USD/m²)</h3>
+                <h3
+                    style="font-size: 1rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                    Carcass Suppliers (USD/m²)</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Holike Rate</label>
-                        <input type="number" class="form-input config-rate-input" id="holikeRate" value="65" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="holikeRate" value="65"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Allure Rate</label>
-                        <input type="number" class="form-input config-rate-input" id="allureRate" value="200" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="allureRate" value="200"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="divider" style="margin: 1.5rem 0;"></div>
-                <h3 style="font-size: 1rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Door Finish Rates (USD/m²)</h3>
+                <h3
+                    style="font-size: 1rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                    Door Finish Rates (USD/m²)</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">PVC Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="pvcUnshaped" value="100" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="pvcUnshaped" value="100"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">PVC Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="pvcShaped" value="200" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="pvcShaped" value="200"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Melamine Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="melamineUnshaped" value="70" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="melamineUnshaped" value="70"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Melamine Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="melamineShaped" value="70" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="melamineShaped" value="70"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Skin Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="skinUnshaped" value="150" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="skinUnshaped" value="150"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Skin Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="skinShaped" value="150" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="skinShaped" value="150"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Paint/Lacquer Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="paintLacquerUnshaped" value="170" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="paintLacquerUnshaped" value="170"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Paint/Lacquer Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="paintLacquerShaped" value="200" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="paintLacquerShaped" value="200"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Powder Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="powderUnshaped" value="100" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="powderUnshaped" value="100"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Powder Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="powderShaped" value="200" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="powderShaped" value="200"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Veneer Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="veneerUnshaped" value="440" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="veneerUnshaped" value="440"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Veneer Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="veneerShaped" value="440" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="veneerShaped" value="440"
+                            step="0.01">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">PET Unshaped</label>
-                        <input type="number" class="form-input config-rate-input" id="petUnshaped" value="110" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="petUnshaped" value="110"
+                            step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label">PET Shaped</label>
-                        <input type="number" class="form-input config-rate-input" id="petShaped" value="110" step="0.01">
+                        <input type="number" class="form-input config-rate-input" id="petShaped" value="110"
+                            step="0.01">
                     </div>
                 </div>
             </div>
             <div class="global-settings-actions">
                 <button class="btn btn-secondary" id="resetGlobalConfigBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="1 4 1 10 7 10"/>
-                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                    </svg>
+                    <i data-lucide="rotate-ccw"></i>
                     Reset to Factory Defaults
                 </button>
                 <button class="btn btn-primary" id="saveGlobalConfigBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/>
-                        <polyline points="7 3 7 8 15 8"/>
-                    </svg>
+                    <i data-lucide="save"></i>
                     Save Global Config
                 </button>
             </div>
@@ -288,26 +315,177 @@
         </div>
     </div>
 
+    <!-- History Modal -->
+    <div class="history-modal" id="historyModal">
+        <div class="history-content">
+            <div class="history-header">
+                <h2>Saved Quotes</h2>
+                <button class="btn btn-secondary" id="closeHistoryBtn">✕ Close</button>
+            </div>
+            <div class="history-body" id="quoteHistory">
+                <div class="history-list" id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Details Modal (New) -->
+    <div class="project-details-modal" id="projectDetailsModal">
+        <div class="project-details-content">
+            <div class="project-details-header">
+                <h2>Project Details</h2>
+                <button class="btn btn-secondary" id="closeProjectDetailsBtn">✕ Close</button>
+            </div>
+            <div class="project-details-body">
+                <div class="form-group">
+                    <label class="form-label">Client Name</label>
+                    <input type="text" class="form-input" id="clientName" placeholder="Client Name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Project Name</label>
+                    <input type="text" class="form-input" id="projectName" placeholder="Project Name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" id="quoteDate">
+                </div>
+                <div class="divider"></div>
+                <div class="form-group">
+                    <label class="form-label">Project Type</label>
+                    <select class="form-select" id="projectType">
+                        <option value="full">Full House</option>
+                        <option value="single">Single Project</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Carcass Supplier</label>
+                    <select class="form-select" id="carcassSupplier">
+                        <option value="holike">Holike ($65/sqm)</option>
+                        <option value="allure">Allure ($200/sqm)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ceiling Height</label>
+                    <select class="form-select" id="defaultCeiling">
+                        <option value="8">8 ft (2450mm)</option>
+                        <option value="9">9 ft (2750mm)</option>
+                        <option value="10">10 ft (3050mm)</option>
+                        <option value="11">11 ft (3350mm)</option>
+                        <option value="12">12 ft (3660mm)</option>
+                        <option value="13">13 ft (3960mm)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="project-details-footer">
+                <button class="btn btn-primary" id="saveProjectDetailsBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Overrides Modal -->
+    <div class="project-details-modal" id="projectOverridesModal">
+        <div class="project-details-content">
+            <div class="project-details-header">
+                <h2>Project Overrides</h2>
+                <button class="btn btn-secondary" id="closeProjectOverridesBtn">✕ Close</button>
+            </div>
+            <div class="project-details-body">
+                <div class="global-settings-info">
+                    <i data-lucide="info"></i>
+                    <p>These settings apply only to this quote, overriding global defaults.</p>
+                </div>
+
+                <h3
+                    style="font-size: 0.875rem; color: var(--text-secondary); margin: 1rem 0 0.5rem 0; font-weight: 600;">
+                    Pricing Adjustments</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Markup (%)</label>
+                        <input type="number" class="form-input" id="quoteMarkupRate" placeholder="Global" step="0.1">
+                        <div class="setting-source" id="markupSource">Global: 80%</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Discount (%)</label>
+                        <input type="number" class="form-input" id="quoteDiscountRate" placeholder="Global" step="0.1">
+                        <div class="setting-source" id="discountSource">Global: 50%</div>
+                    </div>
+                </div>
+
+                <h3
+                    style="font-size: 0.875rem; color: var(--text-secondary); margin: 1rem 0 0.5rem 0; font-weight: 600;">
+                    Custom Rates</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Shipping ($/LF)</label>
+                        <input type="number" class="form-input" id="quoteShippingRate" placeholder="Global" step="0.01">
+                        <div class="setting-source" id="shippingSource">Global: 60</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Install ($/LF)</label>
+                        <input type="number" class="form-input" id="quoteInstallRate" placeholder="Global" step="0.01">
+                        <div class="setting-source" id="installSource">Global: 100</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Drawer ($/unit)</label>
+                        <input type="number" class="form-input" id="quoteDrawerRate" placeholder="Global" step="0.01">
+                        <div class="setting-source" id="drawerSource">Global: 200</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Accessory ($/unit)</label>
+                        <input type="number" class="form-input" id="quoteAccessoryRate" placeholder="Global"
+                            step="0.01">
+                        <div class="setting-source" id="accessorySource">Global: 300</div>
+                    </div>
+                </div>
+
+                <h3
+                    style="font-size: 0.875rem; color: var(--text-secondary); margin: 1rem 0 0.5rem 0; font-weight: 600;">
+                    Custom Dimensions</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Upper Height (mm)</label>
+                        <input type="number" class="form-input" id="quoteDefaultUpperHt" placeholder="Global">
+                        <div class="setting-source" id="upperHtSource">Global: 760</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Base Height (mm)</label>
+                        <input type="number" class="form-input" id="quoteDefaultBaseHt" placeholder="Global">
+                        <div class="setting-source" id="baseHtSource">Global: 920</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <button class="btn btn-sm btn-secondary" id="resetQuoteOverridesBtn" style="width: 100%;">
+                    <i data-lucide="rotate-ccw"></i>
+                    Reset to Global Defaults
+                </button>
+            </div>
+            <div class="project-details-footer">
+                <button class="btn btn-primary" id="saveProjectOverridesBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon">B</div>
-                <div class="logo-text">Bosco <span>Cabinetry</span></div>
+                <img src="assets/Logo-Light.svg" alt="Bosco Cabinetry" class="logo-img">
             </div>
             <div class="header-actions">
-                <div class="quote-total-header" id="headerTotal">$0.00</div>
-                <button class="btn btn-sm btn-secondary" id="showConfigBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
-                    Global Settings
+
+                <button class="btn btn-icon" id="showHistoryBtn" title="Saved Quotes">
+                    <i data-lucide="history"></i>
                 </button>
-                <button class="btn btn-sm btn-secondary" id="showHelpBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    Help
+                <button class="btn btn-icon" id="showConfigBtn" title="Global Settings">
+                    <i data-lucide="settings"></i>
                 </button>
-                <button class="btn btn-sm btn-secondary" id="logoutBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    Logout
+                <button class="btn btn-icon" id="showHelpBtn" title="Help">
+                    <i data-lucide="circle-help"></i>
+                </button>
+                <button class="btn btn-icon" id="logoutBtn" title="Logout">
+                    <i data-lucide="log-out"></i>
                 </button>
             </div>
         </div>
@@ -317,162 +495,51 @@
     <main class="main">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-header-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <h2>Client Info</h2>
+            <div class="sidebar-group">
+                <div class="project-summary-card" id="projectSummaryCard">
+                    <div class="summary-header">
+                        <span class="summary-label">Project</span>
+                        <button class="btn-icon-sm" id="editProjectDetailsBtn" title="Edit Details">
+                            <i data-lucide="file-pen"></i>
+                        </button>
                     </div>
-                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </div>
-                <div class="card-body" id="clientInfo">
-                    <div class="form-group">
-                        <label class="form-label">Client Name</label>
-                        <input type="text" class="form-input" id="clientName" placeholder="Enter client name">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Project Name</label>
-                        <input type="text" class="form-input" id="projectName" placeholder="Enter project name">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Date</label>
-                        <input type="date" class="form-input" id="quoteDate">
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-header-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
-                        <h2>Project Settings</h2>
-                    </div>
-                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </div>
-                <div class="card-body" id="projectSettings">
-                    <div class="form-group">
-                        <label class="form-label">Project Type</label>
-                        <select class="form-select" id="projectType">
-                            <option value="full">Full House</option>
-                            <option value="single">Single Project</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Carcass Supplier (Default)</label>
-                        <select class="form-select" id="carcassSupplier">
-                            <option value="holike">Holike ($65/sqm)</option>
-                            <option value="allure">Allure ($200/sqm)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Default Ceiling Height</label>
-                        <select class="form-select" id="defaultCeiling">
-                            <option value="8">8 ft (2450mm / 96")</option>
-                            <option value="9">9 ft (2750mm / 108")</option>
-                            <option value="10">10 ft (3050mm / 120")</option>
-                            <option value="11">11 ft (3350mm / 132")</option>
-                            <option value="12">12 ft (3660mm / 144")</option>
-                            <option value="13">13 ft (3960mm / 156")</option>
-                        </select>
-                    </div>
-
-                    <!-- Quote-Level Overrides Section -->
-                    <div class="override-section" style="margin-top: 1.5rem;">
-                        <div class="override-toggle" id="quoteOverrideToggle">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 18l6-6-6-6"/>
-                            </svg>
-                            <span>Custom Rates for This Quote</span>
-                            <span class="quote-settings-badge" id="quoteSettingsBadge" style="margin-left: auto;">
-                                Global
-                            </span>
-                        </div>
-                        <div class="override-content" id="quoteOverrideContent">
-                            <div class="quote-settings-intro" style="margin-top: 0.75rem;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="12" y1="16" x2="12" y2="12"/>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
-                                </svg>
-                                <p>Override global defaults for this quote. Leave blank to use global values.</p>
-                            </div>
-
-                            <div class="quote-settings-section">
-                                <div class="quote-settings-section-title">Rates</div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Shipping ($/LF)</label>
-                                        <input type="number" class="form-input quote-override-input" id="quoteShippingRate" placeholder="Global default" step="0.01">
-                                        <div class="setting-source" id="shippingSource">Global: $60</div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Install ($/LF)</label>
-                                        <input type="number" class="form-input quote-override-input" id="quoteInstallRate" placeholder="Global default" step="0.01">
-                                        <div class="setting-source" id="installSource">Global: $100</div>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Drawer ($)</label>
-                                        <input type="number" class="form-input quote-override-input" id="quoteDrawerRate" placeholder="Global default" step="0.01">
-                                        <div class="setting-source" id="drawerSource">Global: $200</div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Accessory ($)</label>
-                                        <input type="number" class="form-input quote-override-input" id="quoteAccessoryRate" placeholder="Global default" step="0.01">
-                                        <div class="setting-source" id="accessorySource">Global: $300</div>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Markup (%)</label>
-                                        <input type="number" class="form-input quote-override-input" id="quoteMarkupRate" placeholder="Global default" step="0.1">
-                                        <div class="setting-source" id="markupSource">Global: 80%</div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Discount (%)</label>
-                                        <input type="number" class="form-input quote-override-input" id="quoteDiscountRate" placeholder="Global default" step="0.1">
-                                        <div class="setting-source" id="discountSource">Global: 50%</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="quote-settings-section">
-                                <div class="quote-settings-section-title">Dimensions</div>
-                                <div class="form-group">
-                                    <label class="form-label">Upper Height (mm)</label>
-                                    <input type="number" class="form-input quote-override-input" id="quoteDefaultUpperHt" placeholder="Global default">
-                                    <div class="setting-source" id="upperHtSource">Global: 760mm</div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Base Height (mm)</label>
-                                    <input type="number" class="form-input quote-override-input" id="quoteDefaultBaseHt" placeholder="Global default">
-                                    <div class="setting-source" id="baseHtSource">Global: 920mm</div>
-                                </div>
-                            </div>
-
-                            <button class="btn btn-sm btn-secondary" id="resetQuoteOverridesBtn" style="width: 100%; margin-top: 1rem;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="1 4 1 10 7 10"/>
-                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                                </svg>
-                                Reset All to Global
-                            </button>
+                    <div class="summary-info">
+                        <h3 id="summaryClientName" class="summary-client">Client Name</h3>
+                        <p id="summaryProjectName" class="summary-project">Project Name</p>
+                        <div class="summary-meta-row">
+                            <span id="summaryDate" class="summary-date">Date</span>
+                            <span class="summary-divider">•</span>
+                            <span id="summaryType" class="summary-type">Full House</span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Project Overrides Button (Attached) -->
+                <button class="btn btn-secondary" id="showProjectOverridesBtn"
+                    style="width: 100%; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="sliders"></i>
+                        Overrides
+                    </span>
+                    <span class="quote-settings-badge" id="sidebarOverridesBadge">Global</span>
+                </button>
             </div>
 
-            <div class="card">
-                <div class="card-header collapsed">
-                    <div class="card-header-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        <h2>Saved Quotes</h2>
-                    </div>
-                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            <!-- Quote Actions Card -->
+            <div class="card sidebar-actions-card">
+                <div class="sidebar-total-section">
+                    <span class="sidebar-total-label">Quote Total</span>
+                    <div class="sidebar-total-value" id="headerTotal">$0.00</div>
                 </div>
-                <div class="card-body collapsed" id="quoteHistory">
-                    <div class="history-list" id="historyList"></div>
+                <div class="sidebar-actions-grid">
+                    <button class="btn btn-sm btn-secondary" id="newQuoteBtn">
+                        <i data-lucide="file-plus"></i>
+                        New
+                    </button>
+                    <button class="btn btn-sm btn-success" id="saveQuoteBtn">
+                        <i data-lucide="save"></i>
+                        Save
+                    </button>
                 </div>
             </div>
         </aside>
@@ -482,16 +549,9 @@
             <div class="items-header">
                 <h1>Line Items</h1>
                 <div class="items-header-actions">
-                    <button class="btn btn-sm btn-secondary" id="newQuoteBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        New Quote
-                    </button>
-                    <button class="btn btn-sm btn-success" id="saveQuoteBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                        Save Quote
-                    </button>
+
                     <button class="btn btn-primary" id="addLineItemBtn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <i data-lucide="plus"></i>
                         Add Item
                     </button>
                 </div>
@@ -535,4 +595,5 @@
     <!-- Application Script -->
     <script type="module" src="./js/app.js"></script>
 </body>
+
 </html>

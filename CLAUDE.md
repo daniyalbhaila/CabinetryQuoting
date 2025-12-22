@@ -9,6 +9,7 @@ This is a single-page application (SPA) for generating custom cabinetry quotes. 
 **Technology Stack:**
 - Vanilla JavaScript (ES6 modules)
 - CSS3 with custom properties
+- Lucide Icons (https://lucide.dev) - Modern icon library
 - localStorage/sessionStorage APIs
 - No frameworks or build tools required
 
@@ -19,6 +20,8 @@ This is a single-page application (SPA) for generating custom cabinetry quotes. 
 - **Project-Type-Specific Rates**: Different markup/install rates for full house vs single project
 - **Visual Hierarchy**: Clear indicators showing which tier is being used
 - **Smart Defaults**: Markup rate auto-selects based on project type unless overridden
+- **Linear-Inspired Design**: Modern monochrome UI with clean visual hierarchy
+- **Modal-Based Workflow**: History, Project Details, and Overrides in dedicated modals
 
 ## Architecture
 
@@ -136,8 +139,24 @@ Quote-level override operations (NEW in v3.0):
 
 #### **components/breakdown.js** - Calculation Breakdown Modal (NEW in v3.0)
 - Shows detailed step-by-step calculation for a line item
+- 2-column layout: Physical calculations (left) | Financial calculations (right)
 - Displays metric conversions, area calculations, cost components
 - Visual breakdown of USD → CAD conversion, markup, etc.
+- Condensed formulas for better readability
+
+#### **components/modals.js** - Modal Management
+Core modals:
+- `setupHelpModal()` - Help documentation modal
+- `setupConfigModal()` - Global Settings modal with tabs (Rates, Dimensions, Materials)
+- `setupHistoryModal()` - Quote history browser (NEW in v3.0)
+- `setupProjectDetailsModal()` - Client/project info editor (NEW in v3.0)
+- `setupProjectOverridesModal()` - Quote-level override editor (NEW in v3.0)
+
+New modal features:
+- Dedicated History modal accessible from header
+- Project Details modal for editing client info
+- Project Overrides modal for quote-level customization
+- All modals use consistent backdrop blur and styling
 
 #### **utils/constants.js** - Factory Defaults Configuration
 Material rates (used in global config):
@@ -255,6 +274,113 @@ When ceiling height changes, upper cabinet height auto-updates via `CEILING_TO_U
 
 This cascades through the same 3-tier system.
 
+### UI/Design System (v3.0 Update)
+
+#### Linear-Inspired Monochrome Palette
+The UI uses a clean, professional monochrome color scheme inspired by Linear's design language:
+
+**Color Variables** (`src/css/main.css`):
+```css
+:root {
+  /* Backgrounds */
+  --bg-primary: #08090A;      /* Main background */
+  --bg-secondary: #121314;    /* Card backgrounds */
+  --bg-tertiary: #1C1D1F;     /* Hover states */
+  --bg-card: #161718;         /* Modal/card backgrounds */
+
+  /* Accents */
+  --accent: #FFFFFF;          /* Primary accent (white) */
+  --accent-dim: #E1E1E3;      /* Dimmed accent */
+  --accent-glow: rgba(255, 255, 255, 0.15); /* Glow effect */
+
+  /* Text */
+  --text-primary: #F7F8F8;    /* Primary text */
+  --text-secondary: #8A8F98;  /* Secondary text */
+  --text-muted: #5F6570;      /* Muted text */
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), ...;
+  --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+```
+
+**Key Design Principles:**
+- **Monochrome Focus**: White accents on dark backgrounds
+- **Subtle Borders**: Translucent borders for depth without harshness
+- **Backdrop Blur**: Modern glassmorphism effects on modals (8px blur)
+- **Box Shadows**: Elevated surfaces use multi-layer shadows
+- **Linear Inspiration**: Clean, minimal, professional aesthetic
+
+#### Icon System
+**Lucide Icons** (https://lucide.dev) - Loaded via CDN:
+```html
+<script src="https://unpkg.com/lucide@latest"></script>
+```
+
+**Usage Pattern**:
+```html
+<i data-lucide="icon-name"></i>
+<!-- Icons auto-rendered via lucide.createIcons() -->
+```
+
+**Icon Initialization**:
+```javascript
+// After DOM updates, re-initialize icons
+if (window.lucide) {
+    window.lucide.createIcons();
+}
+```
+
+**Common Icons**:
+- `chevron-down`, `chevron-right` - Expandable sections
+- `calculator` - Breakdown modal trigger
+- `trash-2` - Delete actions
+- `plus`, `minus` - Add/remove items
+- `settings`, `history`, `log-out` - Header actions
+- `info` - Help/info indicators
+- `rotate-ccw` - Reset actions
+
+#### Component Styling
+
+**Line Items - Linear Row Style**:
+- Flat design with subtle borders (no heavy card backgrounds)
+- Hover effects for interactivity
+- Indented body sections for hierarchy
+- Actions hidden by default, shown on hover
+- Transparent backgrounds with border-bottom separators
+
+**Modals**:
+- Consistent 0.6 opacity dark backdrop
+- 4px backdrop blur for depth
+- Rounded corners (12px)
+- Box shadows for elevation
+- Sticky headers/footers
+
+**Buttons**:
+- Primary: White gradient with glow effect
+- Secondary: Subtle white/5% background
+- Icon buttons: Transparent with hover states (24x24px)
+- Compact sizing: Reduced padding throughout
+
+**Header**:
+- Sticky with backdrop blur (12px)
+- Icon-only buttons for clean appearance
+- Reduced height for more content space
+- Translucent background (0.8 opacity)
+
+#### Logo & Branding
+**Logo**: `src/assets/Logo-Light.svg` - Bosco Cabinetry wordmark
+**Favicons**: Full suite in `src/assets/favicons/`
+- `favicon.ico`, `favicon.svg`
+- `apple-touch-icon.png` (180x180)
+- `favicon-96x96.png`
+- Web manifest with 192x192 and 512x512 icons
+
 ### localStorage Schema
 
 **Keys** (defined in `utils/constants.js`):
@@ -339,7 +465,11 @@ addBtn.addEventListener('click', () => { /* ... */ });
 - `newQuoteBtn` - Create new quote
 - `saveQuoteBtn` - Save quote to history
 - `showHelpBtn`, `closeHelpBtn` - Help modal
-- `showConfigBtn`, `closeConfigBtn` - Config modal
+- `showConfigBtn`, `closeConfigBtn` - Global Settings modal
+- `showHistoryBtn`, `closeHistoryBtn` - Quote history modal (NEW in v3.0)
+- `showProjectDetailsBtn`, `closeProjectDetailsBtn`, `saveProjectDetailsBtn` - Project details modal (NEW in v3.0)
+- `showProjectOverridesBtn`, `closeProjectOverridesBtn`, `saveProjectOverridesBtn` - Quote overrides modal (NEW in v3.0)
+- `editProjectDetailsBtn` - Edit button in project summary card
 - `logoutBtn` - Logout
 
 ### Updating Line Items
