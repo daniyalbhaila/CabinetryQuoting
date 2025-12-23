@@ -97,6 +97,12 @@ function setupQuoteHistoryListeners(onQuoteLoad) {
     if (saveQuoteBtn) {
         saveQuoteBtn.addEventListener('click', () => handleSaveQuote(onQuoteLoad));
     }
+
+    // Revert quote button
+    const revertBtn = getElementById('revertQuoteBtn');
+    if (revertBtn) {
+        revertBtn.addEventListener('click', handleRevert);
+    }
 }
 
 /**
