@@ -237,11 +237,33 @@ async function handleRevert() {
             window.lucide?.createIcons();
         }
 
-        await revertToPublished();
-        // Reload app state is handled by the caller or we trigger a reload?
-        // revertToPublished updates local storage. App State needs to refresh.
-        // We might need to reload the page or re-init the app state.
-        location.reload();
+        try {
+            // Critical: Cancel any pending auto-saves to prevent overwriting the reverted data
+            if (window.quoteApp) {
+                window.quoteApp.cancelAutoSave();
+            }
+
+            // Get the current Cloud ID
+            const currentId = window.quoteApp?.supabase_id;
+
+            if (currentId) {
+                // Use the EXACT same logic as "Load History"
+                await window.quoteApp.loadQuoteFromCloud(currentId);
+                alert('Changes discarded. Reloaded from last saved version.');
+            } else {
+                alert('No saved cloud version found to revert to.');
+            }
+
+        } catch (e) {
+            console.error('Revert failed:', e);
+            alert('Failed to revert changes.');
+        } finally {
+            if (revertBtn) {
+                revertBtn.disabled = false;
+                revertBtn.innerHTML = '<i data-lucide="rotate-ccw"></i>';
+                window.lucide?.createIcons();
+            }
+        }
     }
 }
 

@@ -386,6 +386,17 @@ class QuoteApp {
     }
 
     /**
+     * Cancel any pending auto-save
+     * Useful when reverting or loading new data to prevent overwriting
+     */
+    cancelAutoSave() {
+        if (this.debounceTimeout) {
+            clearTimeout(this.debounceTimeout);
+            this.debounceTimeout = null;
+        }
+    }
+
+    /**
      * Debounced recalculate to avoid excessive re-renders
      */
     debouncedRecalculate() {
