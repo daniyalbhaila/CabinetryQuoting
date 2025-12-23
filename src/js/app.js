@@ -36,6 +36,7 @@ class QuoteApp {
         this.lineItems = [];
         this.nextId = 1;
         this.quoteOverrides = {}; // Quote-level overrides (3-tier system)
+        this.supabase_id = null; // Track cloud ID
         this.debounceTimeout = null;
         this.recalculateTimeout = null;
     }
@@ -117,6 +118,7 @@ class QuoteApp {
             this.lineItems = saved.lineItems || [];
             this.nextId = saved.nextId || 1;
             this.quoteOverrides = saved.overrides || {};
+            this.supabase_id = saved.supabase_id || null;
             loadQuoteData(saved);
             loadQuoteOverrides(saved); // Load quote-level overrides
 
@@ -134,6 +136,7 @@ class QuoteApp {
             setValue('quoteDate', getCurrentDate());
             updateCeilingDisplay('8');
             loadQuoteOverrides(null); // Initialize with empty overrides
+            this.supabase_id = null;
         }
     }
 
@@ -152,6 +155,7 @@ class QuoteApp {
             this.lineItems = [];
             this.nextId = 1;
             this.quoteOverrides = {};
+            this.supabase_id = null;
             setValue('clientName', '');
             setValue('projectName', '');
             setValue('quoteDate', getCurrentDate());
@@ -172,6 +176,7 @@ class QuoteApp {
         this.lineItems = quote.lineItems || [];
         this.nextId = quote.nextId || 1;
         this.quoteOverrides = quote.overrides || {};
+        this.supabase_id = quote.supabase_id || null;
         loadQuoteData(quote);
         loadQuoteOverrides(quote); // Load quote-level overrides
 
@@ -363,7 +368,8 @@ class QuoteApp {
             ...formData,
             overrides: this.quoteOverrides, // Quote-level overrides
             lineItems: this.lineItems,
-            nextId: this.nextId
+            nextId: this.nextId,
+            supabase_id: this.supabase_id // Persist cloud ID
         };
 
         saveCurrentQuote(quoteData);

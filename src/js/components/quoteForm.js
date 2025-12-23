@@ -207,6 +207,12 @@ async function handleSaveQuote(onComplete) {
 
         const success = await publishCurrentQuote();
         if (success) {
+            // Sync the new ID back to the running app state so future auto-saves include it
+            const saved = loadCurrentQuote();
+            if (saved && saved.supabase_id && window.quoteApp) {
+                window.quoteApp.supabase_id = saved.supabase_id;
+            }
+
             // Re-fetch and render the cloud history
             await renderQuoteHistory();
             // Do NOT call onComplete() here, as it triggers loadQuote(undefined) which resets the form
