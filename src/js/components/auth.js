@@ -7,7 +7,9 @@ import { isAuthenticated, setAuthenticated, clearAuth } from '../services/storag
 import { show, hide, getElementById } from '../utils/dom.js';
 
 // TODO: Move this to environment variable or server-side
-const PASSWORD = 'bosco2024';
+
+const PASSWORD = import.meta.env.VITE_APP_PASSWORD;
+
 
 /**
  * Initialize authentication

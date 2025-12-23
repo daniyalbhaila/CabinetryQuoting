@@ -1417,6 +1417,50 @@
 .line-item:hover {
     background: var(--bg-secondary);
     transform: translateX(4px);
-    border-left: 2px solid var(--accent);
-    /* Visual indicator */
+
+    /* Sidebar Grouping */
+    .sidebar-actions-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .w-full {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .save-actions-row {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .flex-1 {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Ensure secondary buttons in this group harmonize */
+    .sidebar-actions-group .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-actions-group .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Revert button specific style */
+    #revertQuoteBtn {
+        color: var(--text-secondary);
+    }
+
+    #revertQuoteBtn:hover {
+        color: var(--error);
+        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.2);
+    }
 }

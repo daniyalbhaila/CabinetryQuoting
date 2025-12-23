@@ -23,3 +23,6 @@ desktop.ini
 # Node.js (if npm is used)
 node_modules/
 package-lock.json
+
+# Environment
+.env

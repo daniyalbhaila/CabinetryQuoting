@@ -1,0 +1,192 @@
+/**
+ * Supabase Service
+ * Handles cloud storage operations
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_KEY } from '../config.js';
+
+let supabase = null;
+
+/**
+ * Initialize Supabase client
+ */
+export function initSupabase() {
+    if (!supabase) {
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            console.error('Supabase credentials missing! Check .env file.');
+            console.error('URL:', SUPABASE_URL);
+            console.error('KEY:', SUPABASE_KEY ? 'Set' : 'Missing');
+            return;
+        }
+        try {
+            supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('Supabase initialized via module');
+        } catch (e) {
+            console.error('Failed to initialize Supabase client:', e);
+        }
+    }
+}
+
+/**
+ * Publish a quote to the cloud
+ * @param {Object} quoteData - The full quote object
+ * @returns {Promise<Object>} The saved data or error
+ */
+export async function publishQuote(quoteData) {
+    if (!supabase) initSupabase();
+
+    // Ensure we have an ID
+    if (!quoteData.id) {
+        // Fallback if no ID (shouldn't happen with current logic, but safe)
+        quoteData.id = crypto.randomUUID();
+    }
+
+    // Force ID to be UUID type if it's a number (legacy logic support)
+    // Note: The app currently uses timestamps (numbers) as IDs. 
+    // Supabase expects UUIDs for our schema.
+    // We will need to migrate or adapter. 
+    // STRATEGY: We will continue to use the numeric ID inside the JSON data,
+    // but we need a stable UUID for the database row.
+    // We will generate a deterministic UUID based on the numeric ID or just use a new field.
+    // BETTER: Let's create a new 'cloudId' if it doesn't exist, or just use the Row ID.
+
+    // For simplicity in this "Basic" version:
+    // We will use the `id` column for the record, and store the App's numeric ID inside `data`.
+    // However, to keep it syncable, we need a consistent way to find this row.
+    // We will require the quoteData object to carry its Cloud UUID.
+
+    // Ensure we have a valid UUID
+    if (!quoteData.id || typeof quoteData.id === 'number') {
+        quoteData.id = crypto.randomUUID();
+    }
+
+    // Sync external ID
+    quoteData.supabase_id = quoteData.id;
+
+    const { data, error } = await supabase
+        .from('quotes')
+        .upsert({
+            id: quoteData.supabase_id,
+            name: quoteData.projectName || 'Untitled Quote',
+            data: quoteData,
+            last_modified_by: 'Bosco Team', // Placeholder
+            updated_at: new Date().toISOString()
+        })
+        .select();
+
+    if (error) {
+        console.error('Supabase Save Error:', error);
+        throw error;
+    }
+
+    return { ...quoteData, last_synced: new Date().toISOString() };
+}
+
+/**
+ * Fetch a specific quote from the cloud
+ * @param {string} supabaseId - The UUID of the quote
+ * @returns {Promise<Object>} The quote data
+ */
+export async function fetchQuote(supabaseId) {
+    if (!supabase) initSupabase();
+
+    const { data, error } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('id', supabaseId)
+        .single();
+
+    if (error) {
+        console.error('Supabase Load Error:', error);
+        throw error;
+    }
+
+    return data.data;
+}
+
+/**
+ * Fetch recent quotes list (Metadata only)
+ * @returns {Promise<Array>} List of quotes
+ */
+export async function fetchRecentQuotes() {
+    if (!supabase) initSupabase();
+
+    const { data, error } = await supabase
+        .from('quotes')
+        .select('id, name, updated_at, last_modified_by')
+        .order('updated_at', { ascending: false })
+        .limit(20);
+
+    if (error) {
+        console.error('Supabase List Error:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+/**
+ * Delete a quote from the cloud
+ * @param {string} supabaseId - The UUID of the quote
+ * @returns {Promise<boolean>} Success status
+ */
+export async function deleteQuote(supabaseId) {
+    if (!supabase) initSupabase();
+
+    const { error } = await supabase
+        .from('quotes')
+        .delete()
+        .eq('id', supabaseId);
+
+    if (error) {
+        console.error('Supabase Delete Error:', error);
+        throw error;
+    }
+
+    return true;
+}
+
+/**
+ * Save Global Settings
+ * @param {Object} settings - The global config object
+ */
+export async function saveGlobalSettings(settings) {
+    if (!supabase) initSupabase();
+
+    const { error } = await supabase
+        .from('settings')
+        .upsert({
+            id: 'global',
+            data: settings,
+            updated_at: new Date().toISOString()
+        });
+
+    if (error) {
+        console.error('Settings Save Error:', error);
+        throw error; // Propagate error for UI handling
+    }
+}
+
+/**
+ * Load Global Settings
+ * @returns {Promise<Object|null>} The settings object or null
+ */
+export async function loadGlobalSettings() {
+    if (!supabase) initSupabase();
+
+    const { data, error } = await supabase
+        .from('settings')
+        .select('data')
+        .eq('id', 'global')
+        .maybeSingle();
+
+    if (error) {
+        // If not found (first run), return null to use defaults
+        if (error.code === 'PGRST116') return null;
+        console.error('Settings Load Error:', error);
+        return null;
+    }
+
+    return data ? data.data : null;
+}

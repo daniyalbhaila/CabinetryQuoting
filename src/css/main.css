@@ -676,7 +676,11 @@ body {
 }
 
 .sidebar-actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 0.5rem;
+    align-items: center;
+}
+
+.flex-1 {
+    flex: 1 1 0%;
 }

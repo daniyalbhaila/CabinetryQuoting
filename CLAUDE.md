@@ -11,7 +11,9 @@ This is a single-page application (SPA) for generating custom cabinetry quotes. 
 - CSS3 with custom properties
 - Lucide Icons (https://lucide.dev) - Modern icon library
 - localStorage/sessionStorage APIs
-- No frameworks or build tools required
+- **Vite** - Build tool and dev server
+- **Supabase** - Cloud persistence (Database + Auth)
+- **Vitest** - Testing framework
 
 **Version 3.0 Key Features:**
 - **3-Tier Configuration System**: Global defaults → Quote overrides → Line item overrides
@@ -47,7 +49,8 @@ quotingTool/
 │   │   │
 │   │   ├── services/            # Business logic
 │   │   │   ├── calculator.js    # Pricing calculations with 3-tier resolution
-│   │   │   └── storage.js       # localStorage/sessionStorage + global config management
+│   │   │   ├── storage.js       # localStorage/sessionStorage + global config management
+│   │   │   └── supabase.js      # Cloud storage sync
 │   │   │
 │   │   └── utils/               # Utilities
 │   │       ├── constants.js     # All constants (rates, conversions, etc.)
@@ -55,9 +58,15 @@ quotingTool/
 │   │       ├── validation.js    # Input validation
 │   │       └── dom.js           # DOM manipulation helpers
 │   │
-│   └── index.html               # Main HTML (structure only, no inline JS/CSS)
+│   └── assets/                  # Static assets
 │
-├── package.json                 # npm scripts for dev server
+├── index.html                   # Main HTML entry point
+├── supabase/                    # Database
+│   └── schema.sql               # Table definitions
+├── tests/                       # Test suite
+├── vite.config.js               # Build config
+├── vitest.config.js             # Test config
+├── package.json                 # npm scripts
 ├── README.md                    # User documentation
 └── CLAUDE.md                    # This file (AI assistant guidance)
 ```
@@ -523,23 +532,17 @@ The `escapeHtml()` function escapes `<`, `>`, `&`, `"`, `'` characters.
 
 ## Deployment
 
-This is a static site - just serve the `src/` folder.
+This is a Vite project. It builds to a `dist/` folder.
 
 ### Deployment Options
 
-**Netlify**:
-1. Deploy the `quotingTool` folder
-2. Set publish directory to `src/`
+**Netlify / Vercel / Static Web Apps**:
+1. Build Command: `npm run build`
+2. Publish Directory: `dist`
 
-**GitHub Pages**:
-```bash
-git add .
-git commit -m "Deploy"
-git push
-# Enable Pages in repo settings, set source to /src folder
-```
-
-**Any static host**: Upload entire `src/` folder
+**Any static host**:
+1. Run `npm run build`
+2. Upload the `dist/` folder contents
 
 ### Production Checklist
 

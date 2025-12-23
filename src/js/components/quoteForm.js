@@ -10,8 +10,15 @@ import {
     getSavedQuotes,
     getQuoteById,
     deleteQuoteFromHistory,
-    ensureGlobalConfig
+    ensureGlobalConfig,
+    publishCurrentQuote,
+    revertToPublished,
+    saveCurrentQuote,
+    loadCurrentQuote,
+    getSyncStatus
 } from '../services/storage.js';
+import { fetchRecentQuotes, deleteQuote } from '../services/supabase.js';
+import { hideHistory } from './modals.js';
 
 /**
  * Initialize quote form
@@ -21,11 +28,16 @@ import {
 export function initQuoteForm(onFormChange, onQuoteLoad) {
     setupFormListeners(onFormChange);
     setupQuoteHistoryListeners(onQuoteLoad);
+    renderQuoteHistory(); // Initial load of cloud history
     setupCardToggles();
     setupQuoteSettingsCard(onFormChange);
 
     // Initial summary update
     updateProjectSummary();
+
+    // Initial Save Button State
+    const currentStatus = getSyncStatus();
+    updateSaveButtonUI(currentStatus.status);
 }
 
 /**
@@ -130,86 +142,169 @@ export function getFormData() {
  * @param {Function} onQuoteLoad - Callback when quote is created
  */
 function handleNewQuote(onQuoteLoad) {
-    if (confirm('Start a new quote? Current work will be auto-saved.')) {
+    if (confirm('Start a new quote? This will clear the current form.')) {
         if (onQuoteLoad) onQuoteLoad(null);
     }
 }
 
 /**
- * Handle save quote with name
+ * Handle save quote (Publish to Cloud)
  * @param {Function} onComplete - Callback when save completes
  */
-function handleSaveQuote(onComplete) {
-    const clientName = getElementById('clientName').value || 'Unnamed Client';
-    const projectName =
-        getElementById('projectName').value || 'Unnamed Project';
-    const quoteName = prompt(
-        'Enter a name for this quote:',
-        `${clientName} - ${projectName}`
-    );
+async function handleSaveQuote(onComplete) {
+    // 1. Prompt for Name
+    const nameInput = getElementById('clientName'); // Use client name or project name as default?
+    const projectInput = getElementById('projectName');
 
-    if (quoteName) {
+    let defaultName = projectInput?.value || '';
+    if (!defaultName && nameInput?.value) {
+        defaultName = `${nameInput.value} Quote`;
+    }
+
+    const name = prompt('Enter a name for this quote:', defaultName);
+    if (!name) return; // User cancelled
+
+    // Update the UI with the new name immediately
+    if (projectInput) {
+        projectInput.value = name;
+        updateProjectSummary();
+    }
+
+    const saveBtn = getElementById('saveQuoteBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Saving...';
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    try {
+        // Save using the new name, but preserve existing data (line items, overrides)
+        // We merged the form data with the current storage state
+        const currentQuote = loadCurrentQuote() || {};
         const formData = getFormData();
+        const mergedQuote = {
+            ...currentQuote,
+            ...formData
+        };
+        saveCurrentQuote(mergedQuote);
 
-        // Get line items from window (set by main app)
-        const lineItems = window.quoteApp ? window.quoteApp.lineItems : [];
-        const nextId = window.quoteApp ? window.quoteApp.nextId : 1;
-
-        const success = saveQuoteToHistory(quoteName, {
-            version: 2,
-            ...formData,
-            overrides: getQuoteOverrides(),
-            lineItems,
-            nextId
-        });
-
+        const success = await publishCurrentQuote();
         if (success) {
-            alert('Quote saved successfully!');
-            renderQuoteHistory();
-            if (onComplete) onComplete();
+            // Re-fetch and render the cloud history
+            await renderQuoteHistory();
+            // Do NOT call onComplete() here, as it triggers loadQuote(undefined) which resets the form
+            // The UI is already up-to-date with the saved data
+        }
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
         }
     }
 }
 
 /**
+ * Handle Revert
+ */
+async function handleRevert() {
+    if (confirm('Discard your recent unsaved changes? This will reload the last saved version from the cloud.')) {
+        const revertBtn = getElementById('revertQuoteBtn');
+        if (revertBtn) {
+            revertBtn.disabled = true;
+            revertBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
+            window.lucide?.createIcons();
+        }
+
+        await revertToPublished();
+        // Reload app state is handled by the caller or we trigger a reload?
+        // revertToPublished updates local storage. App State needs to refresh.
+        // We might need to reload the page or re-init the app state.
+        location.reload();
+    }
+}
+
+// Listen for status changes to update UI
+window.addEventListener('quote-status-changed', (e) => {
+    const { status } = e.detail;
+    updateSaveButtonUI(status);
+});
+
+function updateSaveButtonUI(status) {
+    const btn = getElementById('saveQuoteBtn');
+    if (!btn) return;
+
+    // Revert button should exist in HTML
+    const revertBtn = getElementById('revertQuoteBtn');
+
+    if (status === 'draft') {
+        // Draft Mode: Solid Green
+        btn.className = 'btn btn-success flex-1';
+        btn.innerHTML = '<i data-lucide="cloud-upload"></i> Save';
+        if (revertBtn) revertBtn.style.display = 'inline-flex';
+    } else if (status === 'synced') {
+        // Synced Mode: Ghost/Transparent
+        btn.className = 'btn btn-ghost flex-1';
+        btn.innerHTML = '<i data-lucide="check"></i> Saved';
+        if (revertBtn) revertBtn.style.display = 'none';
+    } else if (status === 'saving') {
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Saving';
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+/**
  * Render quote history list
  */
-export function renderQuoteHistory() {
+export async function renderQuoteHistory() {
     const container = getElementById('historyList');
     if (!container) return;
 
-    const quotes = getSavedQuotes();
+    container.innerHTML = '<div class="p-4 text-center opacity-50"><i data-lucide="loader-2" class="spin"></i> Loading cloud history...</div>';
+    if (window.lucide) window.lucide.createIcons();
 
-    if (quotes.length === 0) {
-        container.innerHTML =
-            '<div class="history-empty">No saved quotes yet</div>';
-        return;
-    }
+    try {
+        const quotes = await fetchRecentQuotes();
 
-    container.innerHTML = quotes
-        .map((quote) => {
-            const date = new Date(quote.savedAt);
-            return `
-            <div class="history-item" data-quote-id="${quote.id}">
-                <div class="history-item-info">
-                    <div class="history-item-name">${escapeHtml(quote.name)}</div>
-                    <div class="history-item-meta">${formatDate(quote.savedAt)} ${formatTime(quote.savedAt)}</div>
+        if (!quotes || quotes.length === 0) {
+            container.innerHTML = '<div class="history-empty">No cloud quotes found</div>';
+            return;
+        }
+
+        container.innerHTML = quotes
+            .map((quote) => {
+                // Supabase returns 'updated_at', we format that
+                const date = new Date(quote.updated_at);
+                return `
+                <div class="history-item" data-quote-id="${quote.id}">
+                    <div class="history-item-info">
+                        <div class="history-item-name">${escapeHtml(quote.name || 'Untitled')}</div>
+                        <div class="history-item-meta">
+                            ${formatDate(quote.updated_at)} ${formatTime(quote.updated_at)}
+                            <br><span class="text-xs opacity-75">By ${escapeHtml(quote.last_modified_by || 'Unknown')}</span>
+                        </div>
+                    </div>
+                    <div class="history-item-actions">
+                        <button class="btn-ghost btn-sm text-error" data-action="delete" data-quote-id="${quote.id}" title="Delete">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                        <button class="btn-ghost btn-sm" title="Load">
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="history-item-actions">
-                    <button data-action="delete" data-quote-id="${quote.id}">
-                        <i data-lucide="trash-2"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-        })
-        .join('');
+            `;
+            })
+            .join('');
 
-    // Add event listeners to history items
-    attachHistoryItemListeners();
+        // Add event listeners to history items
+        attachHistoryItemListeners();
 
-    if (window.lucide) {
-        window.lucide.createIcons();
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    } catch (err) {
+        console.error('Failed to load history:', err);
+        container.innerHTML = '<div class="history-empty text-error">Failed to load history</div>';
     }
 }
 
@@ -217,30 +312,36 @@ export function renderQuoteHistory() {
  * Attach event listeners to history items
  */
 function attachHistoryItemListeners() {
-    // Load quote on click
     const historyItems = document.querySelectorAll('.history-item');
     historyItems.forEach((item) => {
-        item.addEventListener('click', (e) => {
-            // Don't load if clicking delete button
-            if (e.target.closest('[data-action="delete"]')) return;
+        // Main Click (Load)
+        item.addEventListener('click', async (e) => {
+            // Check if delete button was clicked
+            if (e.target.closest('[data-action="delete"]')) {
+                e.stopPropagation();
+                const btn = e.target.closest('[data-action="delete"]');
+                const quoteId = btn.dataset.quoteId;
 
-            const quoteId = parseInt(item.dataset.quoteId);
-            const quote = getQuoteById(quoteId);
-            if (quote && window.quoteApp && window.quoteApp.loadQuote) {
-                window.quoteApp.loadQuote(quote);
+                if (confirm('Are you sure you want to delete this quote from the cloud? This cannot be undone.')) {
+                    try {
+                        btn.disabled = true;
+                        await deleteQuote(quoteId);
+                        await renderQuoteHistory(); // Reload list
+                    } catch (err) {
+                        alert('Failed to delete quote');
+                        btn.disabled = false;
+                    }
+                }
+                return;
             }
-        });
-    });
 
-    // Delete quote on button click
-    const deleteButtons = document.querySelectorAll('[data-action="delete"]');
-    deleteButtons.forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const quoteId = parseInt(btn.dataset.quoteId);
-            if (confirm('Are you sure you want to delete this quote?')) {
-                deleteQuoteFromHistory(quoteId);
-                renderQuoteHistory();
+            const quoteId = item.dataset.quoteId;
+            if (!quoteId) return;
+
+            // Show loading state?
+            if (window.quoteApp && window.quoteApp.loadQuoteFromCloud) {
+                await window.quoteApp.loadQuoteFromCloud(quoteId);
+                hideHistory();
             }
         });
     });
@@ -283,7 +384,10 @@ function setupQuoteSettingsCard(onOverrideChange) {
         'quoteMarkupRate',
         'quoteDiscountRate',
         'quoteDefaultUpperHt',
-        'quoteDefaultBaseHt'
+        'quoteDefaultBaseHt',
+        'quoteDefaultUpperDp',
+        'quoteDefaultBaseDp',
+        'quoteDefaultPantryDp'
     ];
 
     overrideInputs.forEach(inputId => {
@@ -314,9 +418,10 @@ function setupQuoteSettingsCard(onOverrideChange) {
  * @param {Object} quoteData - Quote data with optional overrides
  */
 export function loadQuoteOverrides(quoteData) {
+    // Always start clean to ensure no stale data from previous state
+    resetQuoteOverrides();
+
     if (!quoteData || !quoteData.overrides) {
-        // No overrides, clear all inputs
-        resetQuoteOverrides();
         return;
     }
 
@@ -333,6 +438,9 @@ export function loadQuoteOverrides(quoteData) {
     // Load dimension overrides (if they exist)
     if (overrides.defaultUpperHt != null) setValue('quoteDefaultUpperHt', overrides.defaultUpperHt);
     if (overrides.defaultBaseHt != null) setValue('quoteDefaultBaseHt', overrides.defaultBaseHt);
+    if (overrides.defaultUpperDp != null) setValue('quoteDefaultUpperDp', overrides.defaultUpperDp);
+    if (overrides.defaultBaseDp != null) setValue('quoteDefaultBaseDp', overrides.defaultBaseDp);
+    if (overrides.defaultPantryDp != null) setValue('quoteDefaultPantryDp', overrides.defaultPantryDp);
 
     updateQuoteSettingsDisplay();
 }
@@ -370,6 +478,15 @@ export function getQuoteOverrides() {
     const baseHtInput = getElementById('quoteDefaultBaseHt');
     if (baseHtInput && baseHtInput.value !== '') overrides.defaultBaseHt = parseFloat(baseHtInput.value);
 
+    const upperDpInput = getElementById('quoteDefaultUpperDp');
+    if (upperDpInput && upperDpInput.value !== '') overrides.defaultUpperDp = parseFloat(upperDpInput.value);
+
+    const baseDpInput = getElementById('quoteDefaultBaseDp');
+    if (baseDpInput && baseDpInput.value !== '') overrides.defaultBaseDp = parseFloat(baseDpInput.value);
+
+    const pantryDpInput = getElementById('quoteDefaultPantryDp');
+    if (pantryDpInput && pantryDpInput.value !== '') overrides.defaultPantryDp = parseFloat(pantryDpInput.value);
+
     return overrides;
 }
 
@@ -385,6 +502,9 @@ function resetQuoteOverrides() {
     setValue('quoteDiscountRate', '');
     setValue('quoteDefaultUpperHt', '');
     setValue('quoteDefaultBaseHt', '');
+    setValue('quoteDefaultUpperDp', '');
+    setValue('quoteDefaultBaseDp', '');
+    setValue('quoteDefaultPantryDp', '');
 }
 
 /**
@@ -418,6 +538,9 @@ function updateQuoteSettingsDisplay() {
     // Update source indicators for dimensions
     updateSourceIndicator('upperHtSource', 'quoteDefaultUpperHt', globalConfig.dimensions.defaultUpperHt, 'Upper Ht');
     updateSourceIndicator('baseHtSource', 'quoteDefaultBaseHt', globalConfig.dimensions.defaultBaseHt, 'Base Ht');
+    updateSourceIndicator('upperDpSource', 'quoteDefaultUpperDp', globalConfig.dimensions.defaultUpperDp, 'Upper Dp');
+    updateSourceIndicator('baseDpSource', 'quoteDefaultBaseDp', globalConfig.dimensions.defaultBaseDp, 'Base Dp');
+    updateSourceIndicator('pantryDpSource', 'quoteDefaultPantryDp', globalConfig.dimensions.defaultPantryDp, 'Pantry Dp');
 }
 
 /**

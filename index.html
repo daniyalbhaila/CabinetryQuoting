@@ -10,14 +10,17 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet">
-    <link rel="icon" href="assets/favicons/favicon.ico">
+    <link rel="icon" href="/src/assets/favicons/favicon.ico">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="./css/main.css">
-    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="/src/css/main.css">
+    <link rel="stylesheet" href="/src/css/components.css">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -80,11 +83,11 @@
                 </li>
             </ul>
 
-            <h3>💾 Saving & Loading Quotes</h3>
-            <p><strong>Auto-Save:</strong> Your current work automatically saves as you make changes.</p>
-            <p><strong>Save to History:</strong> Click "Save Quote" in the Saved Quotes section.</p>
-            <p><strong>Load a Quote:</strong> Click any quote in your Saved Quotes list.</p>
-            <p><strong>Start Fresh:</strong> Click "New Quote" to start a new quote.</p>
+            <h3>💾 Saving & Loading Quotes (Cloud Sync)</h3>
+            <p><strong>Auto-Drafts:</strong> Your current work is saved locally as a draft automatically.</p>
+            <p><strong>Save (Publish):</strong> Click the green "Save" button to save/share with the team.</p>
+            <p><strong>Load History:</strong> Click the History (clock) icon to view all shared quotes.</p>
+            <p><strong>Start Fresh:</strong> Click "New" to clear the form and start a new quote.</p>
 
             <div
                 style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
@@ -454,6 +457,23 @@
                         <div class="setting-source" id="baseHtSource">Global: 920</div>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Upper Depth (mm)</label>
+                        <input type="number" class="form-input" id="quoteDefaultUpperDp" placeholder="Global">
+                        <div class="setting-source" id="upperDpSource">Global: 300</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Base Depth (mm)</label>
+                        <input type="number" class="form-input" id="quoteDefaultBaseDp" placeholder="Global">
+                        <div class="setting-source" id="baseDpSource">Global: 600</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pantry Depth (mm)</label>
+                    <input type="number" class="form-input" id="quoteDefaultPantryDp" placeholder="Global">
+                    <div class="setting-source" id="pantryDpSource">Global: 600</div>
+                </div>
 
                 <div class="divider"></div>
                 <button class="btn btn-sm btn-secondary" id="resetQuoteOverridesBtn" style="width: 100%;">
@@ -471,7 +491,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <img src="assets/Logo-Light.svg" alt="Bosco Cabinetry" class="logo-img">
+                <img src="/src/assets/Logo-Light.svg" alt="Bosco Cabinetry" class="logo-img">
             </div>
             <div class="header-actions">
 
@@ -532,13 +552,17 @@
                     <div class="sidebar-total-value" id="headerTotal">$0.00</div>
                 </div>
                 <div class="sidebar-actions-grid">
-                    <button class="btn btn-sm btn-secondary" id="newQuoteBtn">
+                    <button class="btn btn-secondary flex-1" id="newQuoteBtn">
                         <i data-lucide="file-plus"></i>
                         New
                     </button>
-                    <button class="btn btn-sm btn-success" id="saveQuoteBtn">
-                        <i data-lucide="save"></i>
+                    <button class="btn btn-success flex-1" id="saveQuoteBtn">
+                        <i data-lucide="cloud-upload"></i>
                         Save
+                    </button>
+                    <button class="btn btn-icon btn-secondary" id="revertQuoteBtn" style="display: none;"
+                        title="Discard">
+                        <i data-lucide="rotate-ccw"></i>
                     </button>
                 </div>
             </div>
@@ -593,7 +617,7 @@
     </main>
 
     <!-- Application Script -->
-    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="/src/js/app.js"></script>
 </body>
 
 </html>

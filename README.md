@@ -25,19 +25,19 @@ npm run dev
 - **Clear Visual Hierarchy**: See at a glance which settings are custom vs. defaults
 - **Easy Reset**: Revert overrides back to defaults with one click
 
-### 💾 Data Persistence
-- **Auto-Save**: Current quote automatically saves to localStorage on every change
-- **Quote History**: Save multiple quotes with custom names
-- **Resume Work**: Automatically loads last working quote on page load
-- **No Data Loss**: All data stored locally in browser
-- **Global Config**: Your default settings persist across all quotes
+### ☁️ Cloud Sync & Data Persistence
+- **Shared Team Database**: All quotes and global settings sync across the team via Supabase (Cloud).
+- **Auto-Drafts**: Current work serves as a local draft until you're ready to publish.
+- **Quote History**: Browse and load quotes saved by any team member.
+- **Revert Capability**: Discard local changes and reload the last published version from the cloud.
+- **Global Config Sync**: Your default rates and dimensions sync instantly to all team members.
 
 ### 📋 Quote Management
 - **Client Information**: Track client name, project name, and date
 - **Multiple Line Items**: Add unlimited rooms/sections per quote
 - **Custom Naming**: Name each line item (Kitchen, Bathroom, etc.)
-- **Save & Load**: Save quotes to history and reload them anytime
-- **New Quote**: Start fresh while auto-saving previous work
+- **Save & Load**: Save quotes to the shared cloud history and reload them anytime
+- **New Quote**: Start fresh (clears current form)
 
 ### 🧮 Calculation Features
 - **Linear Footage Pricing**: Upper cabinets, base cabinets, pantry cabinets
@@ -67,7 +67,10 @@ npm run dev
 - **Icon-Only Header**: Compact header with icon buttons for cleaner appearance
 - **Sticky Header**: Navigation always visible while scrolling
 - **Visual Feedback**: Smooth animations, hover effects, and backdrop blur
-- **Status Indicators**: Clear badges showing custom vs. global settings
+- **Status Indicators**:
+    - **Green "Save"**: Unsaved changes (Draft mode)
+    - **Ghost "Saved"**: Synced with cloud
+    - **Undo Icon**: Revert to last saved version
 - **Keyboard Friendly**: Tab navigation support
 - **Help Modal**: Built-in user guide accessible from header
 - **Clean Hierarchy**: Visual spacing and indentation makes sections easy to scan
@@ -84,12 +87,12 @@ npm run dev
    - Click "Global Settings" in header
    - Set your default rates (shipping, install, drawer, accessory, markup, discount)
    - Set default dimensions (upper height, base height, depths)
-   - Click "Close" - these apply to all new quotes
+   - Click "Save Global Settings" - these sync coverage for the whole team
 3. **Fill Client Info**: Add client name, project name, and date in sidebar
 4. **Configure Project**: Set project type, ceiling height, carcass supplier
 5. **Customize Quote (Optional)**: Expand "Custom Rates for This Quote" in Project Settings to override global defaults for this specific quote
 6. **Add Line Items**: Click "Add Item" to create rooms/sections
-7. **Save Quote**: Click "Save Quote" in sidebar to preserve your work
+7. **Save Quote**: Click "Save to Cloud" in sidebar to publish your work
 
 ### Adding Line Items
 
@@ -122,20 +125,22 @@ Click "Advanced Settings" to access:
 
 ### Saving & Loading Quotes
 
-**To Save:**
-- Click "Save Quote" button in Saved Quotes section
-- Enter a descriptive name
-- Quote appears in history list
+**To Save (Publish):**
+- Click the **green "Save" button** in the sidebar.
+- Enter a name for the quote.
+- The button turns transparent ("Saved") to indicate success.
+- This publishes the quote to the team cloud database.
 
 **To Load:**
-- Click any quote in the Saved Quotes list
-- All data loads instantly
-- Continue editing or start new
+- Click the **History icon (Clock)** in the top header.
+- Browse the "Saved Quotes" list (sorted by last update).
+- Click any quote to load it into your workspace.
+- **Tip**: You can also delete old quotes using the trash icon.
 
 **To Start New:**
-- Click "New Quote" button
-- Current work auto-saves first
-- Fresh quote ready
+- Click **"New"** button in sidebar.
+- Confirm that you want to **clear the current form**.
+- A fresh quote starts (your previous work is safe if you saved it!).
 
 ---
 
@@ -462,29 +467,43 @@ Result: This line item uses 1070mm, others use 760mm
 quotingTool/
 ├── src/                    # Source code
 │   ├── css/               # Stylesheets
-│   │   ├── main.css       # Main styles
-│   │   └── components.css # Component styles
 │   ├── js/                # JavaScript modules
 │   │   ├── app.js        # Main application
 │   │   ├── components/   # UI components
 │   │   ├── services/     # Business logic
 │   │   └── utils/        # Utilities
-│   └── index.html         # HTML structure
+│   └── assets/            # Static assets
+├── supabase/               # Database definitions
+│   └── schema.sql         # SQL schema
+├── tests/                  # Test suite
+├── index.html              # Entry point
 ├── package.json            # npm configuration
-├── README.md               # This file (user documentation)
+├── vite.config.js          # Vite build config
+├── vitest.config.js        # Test config
+├── README.md               # User documentation
 ├── CLAUDE.md               # Developer/AI assistant guide
 ├── CODE_REVIEW.md          # Code quality assessment
 └── .gitignore              # Git ignore rules
-└── assets/
-    ├── Logo-Light.svg      # Bosco logo
-    └── favicons/           # Favicon files
-        ├── favicon.ico
-        ├── favicon.svg
-        ├── apple-touch-icon.png
-        └── ...
 ```
 
 ---
+
+## Cloud Setup (Supabase)
+
+This project uses Supabase for saving quotes and global configuration.
+
+### 1. Database Setup
+1. Create a new Supabase project.
+2. Go to the SQL Editor in your Supabase dashboard.
+3. Run the contents of `supabase/schema.sql` to create the required tables (`quotes` and `settings`).
+
+### 2. Environment Variables
+Create a `.env` file in the root directory:
+
+```bash
+VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
 
 ## Installation
 
@@ -498,28 +517,11 @@ npm run dev
 
 ### Static Hosting Deployment
 
-#### Netlify
-1. Drag and drop the `quotingTool` folder to Netlify
-2. Set publish directory to `src/`
-3. Done! Your site is live
+#### Netlify / Vercel / Static Web Apps
+1. Connect your repository.
+2. Set Build Command: `npm run build`
+3. Set Publish Directory: `dist`
 
-#### Vercel
-```bash
-cd quotingTool
-npx vercel
-# Set output directory to: src
-```
-
-#### GitHub Pages
-1. Create a new repository
-2. Push the `quotingTool` folder contents
-3. Enable GitHub Pages in repository settings
-4. Set source to main branch, `/src` directory
-
-#### Azure Static Web Apps
-1. Create new Static Web App in Azure Portal
-2. Connect to your repository
-3. Set app location to `src/`
 
 ---
 

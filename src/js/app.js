@@ -21,7 +21,8 @@ import {
 } from './components/lineItems.js';
 import { updateQuoteSummary } from './components/quoteSummary.js';
 import { initBreakdown } from './components/breakdown.js';
-import { saveCurrentQuote, loadCurrentQuote } from './services/storage.js';
+import { saveCurrentQuote, loadCurrentQuote, syncGlobalConfig } from './services/storage.js';
+import { fetchQuote } from './services/supabase.js';
 import { calculateLineItem } from './services/calculator.js';
 import { validateLinearFeet, validateCount } from './utils/validation.js';
 import { getElementById, setValue } from './utils/dom.js';
@@ -45,6 +46,8 @@ class QuoteApp {
     init() {
         // Initialize auth first
         initAuth(() => this.onAuthSuccess());
+        // Start background sync of global config
+        syncGlobalConfig();
     }
 
     /**
@@ -138,7 +141,12 @@ class QuoteApp {
      * Load a specific quote
      * @param {Object|null} quote - Quote to load (null for new quote)
      */
+    /**
+     * Load a specific quote
+     * @param {Object|null} quote - Quote to load (null for new quote)
+     */
     loadQuote(quote) {
+        // ... (existing implementation)
         if (!quote) {
             // New quote
             this.lineItems = [];
@@ -147,7 +155,8 @@ class QuoteApp {
             setValue('clientName', '');
             setValue('projectName', '');
             setValue('quoteDate', getCurrentDate());
-            loadQuoteOverrides(null); // Clear quote overrides
+            loadQuoteOverrides(null); // Clear quote overrides inputs
+            this.quoteOverrides = {}; // Reset app state immediately
             renderLineItems(
                 this.lineItems,
                 (id, field, value) => this.updateLineItem(id, field, value),
@@ -176,6 +185,42 @@ class QuoteApp {
         updateQuoteSummary(this.lineItems);
         this.saveState();
         window.scrollTo(0, 0);
+    }
+
+    /**
+     * Load quote from cloud
+     * @param {string} id - Quote UUID
+     */
+    async loadQuoteFromCloud(id) {
+        try {
+            // fetchQuote returns the quote object directly (or throws)
+            const quoteData = await fetchQuote(id);
+
+            if (!quoteData) {
+                alert('Failed to load quote from cloud (Empty response).');
+                return;
+            }
+
+            // Inject the top-level ID just in case
+            const quote = { ...quoteData, supabase_id: id };
+
+            // If the fetched quote has an 'updated_at' from the row, we might want to preserve it
+            // but our internal structure usually keeps it in metadata. 
+
+            console.log('Loading quote from cloud:', quote);
+            this.loadQuote(quote);
+            console.log('Quote loaded successfully');
+
+            // Mark as synced since we just loaded it
+            // We need to bypass the auto-save 'draft' trigger that loadQuote -> saveState causes
+            // Or just update the status immediately after
+            // For now, let's trust the storage service to persist the sync status if we tell it
+            // But we don't have direct access to persistSyncStatus here without importing it.
+            // Let's defer that for now, loading is the priority.
+        } catch (e) {
+            console.error('Error loading cloud quote:', e);
+            alert(`Error loading quote from cloud: ${e.message || 'Unknown error'}`);
+        }
     }
 
     /**

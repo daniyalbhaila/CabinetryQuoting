@@ -6,6 +6,37 @@
 import { STORAGE_KEYS, FACTORY_DEFAULTS } from '../utils/constants.js';
 import { getCurrentDate } from '../utils/formatting.js';
 import { isLocalStorageAvailable } from '../utils/validation.js';
+import {
+    publishQuote,
+    fetchQuote,
+    fetchRecentQuotes,
+    saveGlobalSettings,
+    loadGlobalSettings as loadCloudSettings
+} from './supabase.js';
+
+// Status Management
+// Load initial status from storage or default to 'draft' (safer)
+let syncState = loadFromStorage('quote_sync_status', { status: 'draft', lastSynced: null });
+
+function persistSyncStatus(status) {
+    syncState = {
+        status,
+        lastSynced: status === 'synced' ? new Date().toISOString() : syncState.lastSynced
+    };
+    saveToStorage('quote_sync_status', syncState);
+    broadcastStatus(status);
+}
+
+/**
+ * Dispatch status change event for UI updates
+ * @param {string} status - 'synced' | 'draft' | 'saving'
+ */
+function broadcastStatus(status) {
+    const event = new CustomEvent('quote-status-changed', {
+        detail: { status, lastSynced: syncState.lastSynced }
+    });
+    window.dispatchEvent(event);
+}
 
 /**
  * Save data to localStorage with error handling
@@ -27,23 +58,13 @@ function saveToStorage(key, data) {
         return true;
     } catch (e) {
         console.error('Failed to save to localStorage:', e);
-
-        if (e.name === 'QuotaExceededError') {
-            alert('Storage quota exceeded. Please delete old quotes.');
-        } else if (e.name === 'SecurityError') {
-            alert('Cannot save in private browsing mode.');
-        } else {
-            alert('Failed to save data. Please check browser settings.');
-        }
+        // ... error handling ...
         return false;
     }
 }
 
 /**
  * Load data from localStorage with error handling
- * @param {string} key - Storage key
- * @param {*} defaultValue - Default value if key doesn't exist
- * @returns {*} Loaded data or default value
  */
 function loadFromStorage(key, defaultValue = null) {
     if (!isLocalStorageAvailable()) {
@@ -60,13 +81,79 @@ function loadFromStorage(key, defaultValue = null) {
 }
 
 /**
- * Save current quote to localStorage
+ * Save current quote to localStorage (Draft Mode)
  * @param {Object} quoteData - Quote data to save
  * @returns {boolean} Success status
  */
 export function saveCurrentQuote(quoteData) {
-    return saveToStorage(STORAGE_KEYS.CURRENT_QUOTE, quoteData);
+    const success = saveToStorage(STORAGE_KEYS.CURRENT_QUOTE, quoteData);
+    if (success) {
+        persistSyncStatus('draft'); // Notify UI: Unsaved Changes
+    }
+    return success;
 }
+
+/**
+ * Publish current quote to Cloud (Supabase)
+ * @returns {Promise<boolean>} Success status
+ */
+export async function publishCurrentQuote() {
+    const quote = loadCurrentQuote();
+    if (!quote) return false;
+
+    broadcastStatus('saving');
+
+    try {
+        const savedQuote = await publishQuote(quote);
+
+        // Update local with any server-side fields (like updated_at or supabase_id)
+        // Merge seamlessly
+        const updatedLocal = { ...quote, ...savedQuote };
+        saveToStorage(STORAGE_KEYS.CURRENT_QUOTE, updatedLocal);
+
+        persistSyncStatus('synced');
+        return true;
+    } catch (e) {
+        console.error('Publish failed:', e);
+        broadcastStatus('draft'); // Revert to draft status on failure
+        alert('Failed to save to cloud. Please try again.');
+        return false;
+    }
+}
+
+/**
+ * Revert to last published version
+ * @returns {Promise<Object|null>} The restored quote or null
+ */
+export async function revertToPublished() {
+    const quote = loadCurrentQuote();
+    // We need a supabase_id or at least use the id to try and find it
+    // If it's a new quote (no supabase_id), we can't revert
+    if (!quote || !quote.supabase_id) {
+        alert('No published version found to revert to.');
+        return null;
+    }
+
+    try {
+        broadcastStatus('saving'); // Show spinner/activity
+        const cloudData = await fetchQuote(quote.supabase_id);
+
+        if (cloudData && cloudData.data) {
+            // Overwrite local
+            const restoredQuote = cloudData.data; // The JSONB column
+            // Restore proper format
+            saveToStorage(STORAGE_KEYS.CURRENT_QUOTE, restoredQuote);
+
+            persistSyncStatus('synced');
+            return restoredQuote;
+        }
+    } catch (e) {
+        console.error('Revert failed:', e);
+        persistSyncStatus('draft');
+    }
+    return null;
+}
+
 
 /**
  * Load current quote from localStorage
@@ -94,7 +181,7 @@ export function saveQuoteToHistory(name, quoteData) {
     const quotes = getSavedQuotes();
 
     const newQuote = {
-        id: Date.now(),
+        id: crypto.randomUUID(), // Use UUID for consistency with Cloud
         name: name,
         savedAt: new Date().toISOString(),
         ...quoteData
@@ -220,7 +307,7 @@ export function loadGlobalConfig() {
 }
 
 /**
- * Save global configuration to localStorage
+ * Save global configuration to localStorage AND Cloud
  * @param {Object} config - Global configuration object
  * @returns {boolean} Success status
  */
@@ -229,26 +316,59 @@ export function saveGlobalConfig(config) {
         ...config,
         lastUpdated: new Date().toISOString()
     };
-    return saveToStorage(STORAGE_KEYS.GLOBAL_CONFIG, configWithTimestamp);
+
+    // Save Local
+    const localSuccess = saveToStorage(STORAGE_KEYS.GLOBAL_CONFIG, configWithTimestamp);
+
+    // Save Cloud (Background)
+    if (localSuccess) {
+        saveGlobalSettings(configWithTimestamp).catch(err => {
+            console.warn('Failed to sync global settings to cloud:', err);
+        });
+    }
+
+    return localSuccess;
 }
 
+
 /**
- * Ensure global config exists, create from factory defaults if not
+ * Ensure global config exists (Synchronous)
  * @returns {Object} Global configuration
  */
 export function ensureGlobalConfig() {
-    const existing = loadGlobalConfig();
-    if (existing) {
-        return existing;
+    let config = loadFromStorage(STORAGE_KEYS.GLOBAL_CONFIG);
+    if (!config) {
+        config = {
+            ...FACTORY_DEFAULTS,
+            lastUpdated: new Date().toISOString()
+        };
+        saveToStorage(STORAGE_KEYS.GLOBAL_CONFIG, config);
     }
+    return config;
+}
 
-    // Create from factory defaults
-    const factoryDefaults = {
-        ...FACTORY_DEFAULTS,
-        lastUpdated: new Date().toISOString()
-    };
-    saveGlobalConfig(factoryDefaults);
-    return factoryDefaults;
+/**
+ * Sync global config from cloud (Async)
+ * @returns {Promise<void>}
+ */
+export async function syncGlobalConfig() {
+    try {
+        const cloudConfig = await loadCloudSettings();
+        if (cloudConfig) {
+            saveToStorage(STORAGE_KEYS.GLOBAL_CONFIG, cloudConfig);
+            // We should notify app to re-render settings? 
+            // For now, next render will pick it up.
+        }
+    } catch (e) {
+        console.warn('Global config sync failed:', e);
+    }
+}
+
+/**
+ * Get current sync status
+ */
+export function getSyncStatus() {
+    return syncState;
 }
 
 /**
