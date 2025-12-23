@@ -180,8 +180,19 @@ async function handleSaveQuote(onComplete) {
     try {
         // Save using the new name, but preserve existing data (line items, overrides)
         // We merged the form data with the current storage state
+        // Save using the new name, but preserve existing data (line items, overrides)
+        // We merged the form data with the current storage state
         const currentQuote = loadCurrentQuote() || {};
         const formData = getFormData();
+
+        // FAILSAFE: Ensure we capture the latest in-memory state from the running app
+        // This prevents "debounce lag" where storage might be slightly behind the UI
+        if (window.quoteApp) {
+            currentQuote.lineItems = window.quoteApp.lineItems || [];
+            currentQuote.overrides = window.quoteApp.quoteOverrides || {};
+            currentQuote.nextId = window.quoteApp.nextId || 1;
+        }
+
         const mergedQuote = {
             ...currentQuote,
             ...formData
