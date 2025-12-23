@@ -159,22 +159,25 @@ function handleNewQuote(onQuoteLoad) {
  */
 async function handleSaveQuote(onComplete) {
     // 1. Prompt for Name
-    const nameInput = getElementById('clientName'); // Use client name or project name as default?
+    const nameInput = getElementById('clientName');
     const projectInput = getElementById('projectName');
 
-    let defaultName = projectInput?.value || '';
-    if (!defaultName && nameInput?.value) {
-        defaultName = `${nameInput.value} Quote`;
+    const clientName = nameInput?.value?.trim() || '';
+    const projectName = projectInput?.value?.trim() || '';
+
+    // Default Name Strategy: "Client Name - Project Name"
+    let defaultName = '';
+    if (clientName && projectName) {
+        defaultName = `${clientName} - ${projectName}`;
+    } else {
+        defaultName = projectName || clientName || 'Untitled Quote';
     }
 
-    const name = prompt('Enter a name for this quote:', defaultName);
+    const name = prompt('Enter a name for this quote (history only):', defaultName);
     if (!name) return; // User cancelled
 
-    // Update the UI with the new name immediately
-    if (projectInput) {
-        projectInput.value = name;
-        updateProjectSummary();
-    }
+    // NOTE: We do NOT update the projectInput value.
+    // The "Save Name" is separate from the "Project Name" field.
 
     const saveBtn = getElementById('saveQuoteBtn');
     if (saveBtn) {
@@ -184,8 +187,6 @@ async function handleSaveQuote(onComplete) {
     }
 
     try {
-        // Save using the new name, but preserve existing data (line items, overrides)
-        // We merged the form data with the current storage state
         // Save using the new name, but preserve existing data (line items, overrides)
         // We merged the form data with the current storage state
         const currentQuote = loadCurrentQuote() || {};
@@ -205,7 +206,7 @@ async function handleSaveQuote(onComplete) {
         };
         saveCurrentQuote(mergedQuote);
 
-        const success = await publishCurrentQuote();
+        const success = await publishCurrentQuote(name);
         if (success) {
             // Sync the new ID back to the running app state so future auto-saves include it
             const saved = loadCurrentQuote();

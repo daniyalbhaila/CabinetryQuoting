@@ -33,7 +33,7 @@ export function initSupabase() {
  * @param {Object} quoteData - The full quote object
  * @returns {Promise<Object>} The saved data or error
  */
-export async function publishQuote(quoteData) {
+export async function publishQuote(quoteData, overrideName = null) {
     if (!supabase) initSupabase();
 
     // Ensure we have an ID
@@ -41,34 +41,12 @@ export async function publishQuote(quoteData) {
         // Fallback if no ID (shouldn't happen with current logic, but safe)
         quoteData.id = crypto.randomUUID();
     }
-
-    // Force ID to be UUID type if it's a number (legacy logic support)
-    // Note: The app currently uses timestamps (numbers) as IDs. 
-    // Supabase expects UUIDs for our schema.
-    // We will need to migrate or adapter. 
-    // STRATEGY: We will continue to use the numeric ID inside the JSON data,
-    // but we need a stable UUID for the database row.
-    // We will generate a deterministic UUID based on the numeric ID or just use a new field.
-    // BETTER: Let's create a new 'cloudId' if it doesn't exist, or just use the Row ID.
-
-    // For simplicity in this "Basic" version:
-    // We will use the `id` column for the record, and store the App's numeric ID inside `data`.
-    // However, to keep it syncable, we need a consistent way to find this row.
-    // We will require the quoteData object to carry its Cloud UUID.
-
-    // Ensure we have a valid UUID
-    if (!quoteData.id || typeof quoteData.id === 'number') {
-        quoteData.id = crypto.randomUUID();
-    }
-
-    // Sync external ID
-    quoteData.supabase_id = quoteData.id;
-
+    // ...
     const { data, error } = await supabase
         .from('quotes')
         .upsert({
             id: quoteData.supabase_id,
-            name: quoteData.projectName || 'Untitled Quote',
+            name: overrideName || quoteData.projectName || 'Untitled Quote',
             data: quoteData,
             last_modified_by: 'Bosco Team', // Placeholder
             updated_at: new Date().toISOString()

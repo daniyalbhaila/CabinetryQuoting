@@ -97,14 +97,14 @@ export function saveCurrentQuote(quoteData) {
  * Publish current quote to Cloud (Supabase)
  * @returns {Promise<boolean>} Success status
  */
-export async function publishCurrentQuote() {
+export async function publishCurrentQuote(name = null) {
     const quote = loadCurrentQuote();
     if (!quote) return false;
 
     broadcastStatus('saving');
 
     try {
-        const savedQuote = await publishQuote(quote);
+        const savedQuote = await publishQuote(quote, name);
 
         // Update local with any server-side fields (like updated_at or supabase_id)
         // Merge seamlessly
