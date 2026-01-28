@@ -33,19 +33,58 @@ export function initSupabase() {
  * @param {Object} quoteData - The full quote object
  * @returns {Promise<Object>} The saved data or error
  */
+/**
+ * Generate a UUID v4
+ * Falls back to Math.random if crypto is not available
+ */
+function uuidv4() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
+ * Publish a quote to the cloud
+ * @param {Object} quoteData - The full quote object
+ * @returns {Promise<Object>} The saved data or error
+ */
 export async function publishQuote(quoteData, overrideName = null) {
     if (!supabase) initSupabase();
 
-    // Ensure we have an ID
-    if (!quoteData.id) {
-        // Fallback if no ID (shouldn't happen with current logic, but safe)
-        quoteData.id = crypto.randomUUID();
+    // Debug incoming data
+    console.log('Publishing quote, incoming data:', {
+        hasId: !!quoteData.id,
+        idType: typeof quoteData.id,
+        hasSupabaseId: !!quoteData.supabase_id
+    });
+
+    // 1. Resolve ID
+    // Priority: Existing supabase_id -> Existing valid UUID id -> Generate New
+    let cloudId = quoteData.supabase_id;
+
+    if (!cloudId && quoteData.id && typeof quoteData.id === 'string' && quoteData.id.length === 36) {
+        cloudId = quoteData.id;
     }
-    // ...
+
+    if (!cloudId) {
+        cloudId = uuidv4();
+        console.log('Generated new Cloud ID:', cloudId);
+    }
+
+    // 2. Ensure consistency
+    quoteData.supabase_id = cloudId;
+    if (!quoteData.id || typeof quoteData.id === 'number') {
+        quoteData.id = cloudId;
+    }
+
     const { data, error } = await supabase
         .from('quotes')
         .upsert({
-            id: quoteData.supabase_id,
+            id: cloudId, // Explicitly use the resolved ID
             name: overrideName || quoteData.projectName || 'Untitled Quote',
             data: quoteData,
             last_modified_by: 'Bosco Team', // Placeholder
