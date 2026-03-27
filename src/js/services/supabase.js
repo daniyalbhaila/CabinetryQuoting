@@ -172,6 +172,25 @@ export async function fetchRecentQuotes({ offset = 0, limit = 20 } = {}) {
 }
 
 /**
+ * Fetch total quotes count from cloud
+ * @returns {Promise<number>} Total row count
+ */
+export async function fetchQuotesCount() {
+    if (!supabase) initSupabase();
+
+    const { count, error } = await supabase
+        .from('quotes')
+        .select('id', { head: true, count: 'exact' });
+
+    if (error) {
+        console.error('Supabase Count Error:', error);
+        throw error;
+    }
+
+    return count || 0;
+}
+
+/**
  * Delete a quote from the cloud
  * @param {string} supabaseId - The UUID of the quote
  * @returns {Promise<boolean>} Success status
