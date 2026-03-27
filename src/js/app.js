@@ -22,7 +22,7 @@ import {
 import { updateQuoteSummary } from './components/quoteSummary.js';
 import { initBreakdown } from './components/breakdown.js';
 import { saveCurrentQuote, loadCurrentQuote, syncGlobalConfig } from './services/storage.js';
-import { fetchQuote } from './services/supabase.js';
+import { fetchQuote, warmQuotesEndpoint } from './services/supabase.js';
 import { calculateLineItem } from './services/calculator.js';
 import { validateLinearFeet, validateCount } from './utils/validation.js';
 import { getElementById, setValue } from './utils/dom.js';
@@ -45,6 +45,12 @@ class QuoteApp {
      * Initialize the application
      */
     init() {
+        // Warm cloud endpoint right away so the Supabase project is less likely to pause.
+        // Fire-and-forget so app load/auth flow is never blocked.
+        warmQuotesEndpoint().catch((err) => {
+            console.warn('Background Supabase warm-up failed:', err);
+        });
+
         // Initialize auth first
         initAuth(() => this.onAuthSuccess());
         // Start background sync of global config

@@ -29,6 +29,28 @@ export function initSupabase() {
 }
 
 /**
+ * Warm Supabase saved-quotes endpoint in the background.
+ * This helps keep the project active even when users are not opening history daily.
+ * @returns {Promise<boolean>} True when request completed without API errors
+ */
+export async function warmQuotesEndpoint() {
+    if (!supabase) initSupabase();
+    if (!supabase) return false;
+
+    const { error } = await supabase
+        .from('quotes')
+        .select('id', { head: true, count: 'exact' })
+        .limit(1);
+
+    if (error) {
+        console.warn('Supabase warm-up failed:', error);
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Publish a quote to the cloud
  * @param {Object} quoteData - The full quote object
  * @returns {Promise<Object>} The saved data or error
