@@ -261,7 +261,10 @@ export function calculateLineItem(item) {
     const upperM = (item.upperLF || 0) * CONVERSION.FEET_TO_METERS;
     const baseM = (item.baseLF || 0) * CONVERSION.FEET_TO_METERS;
     const pantryM = (item.pantryLF || 0) * CONVERSION.FEET_TO_METERS;
-    const totalLF = (item.upperLF || 0) + (item.baseLF || 0) + (item.pantryLF || 0);
+    const upperLF = item.upperLF || 0;
+    const baseLF = item.baseLF || 0;
+    const pantryLF = item.pantryLF || 0;
+    const totalLF = upperLF + baseLF + pantryLF;
 
     // Calculate door area (square meters)
     const doorArea =
@@ -309,8 +312,12 @@ export function calculateLineItem(item) {
     const cabinetry = (cabinetryUSD * settings.exchangeRate) + additionalTotal;
 
     // Calculate shipping and installation (CAD)
-    const shipping = totalLF * rates.shippingRate;
-    const install = totalLF * rates.installRate;
+    // Uppers + base use half-rate, pantry uses full rate.
+    const upperBaseLF = upperLF + baseLF;
+    const upperBaseShippingRate = rates.shippingRate / 2;
+    const upperBaseInstallRate = rates.installRate / 2;
+    const shipping = (upperBaseLF * upperBaseShippingRate) + (pantryLF * rates.shippingRate);
+    const install = (upperBaseLF * upperBaseInstallRate) + (pantryLF * rates.installRate);
 
     // Calculate subtotal (CAD)
     const subtotal = cabinetry + shipping + install;
