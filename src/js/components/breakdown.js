@@ -321,12 +321,16 @@ function renderBreakdown(calc, item) {
                 <div class="breakdown-grid-row">
                     <div class="breakdown-step">
                         <div class="breakdown-label">Shipping</div>
-                        <div class="breakdown-formula">$${ratesUsed.shippingRate}/LF</div>
+                        <div class="breakdown-formula">
+                            Upper/Base: $${(ratesUsed.shippingRate / 2).toFixed(2)}/LF • Pantry: $${ratesUsed.shippingRate}/LF
+                        </div>
                         <div class="breakdown-result">${formatCurrency(calc.shipping)}</div>
                     </div>
                     <div class="breakdown-step">
                         <div class="breakdown-label">Installation</div>
-                        <div class="breakdown-formula">$${ratesUsed.installRate}/LF</div>
+                        <div class="breakdown-formula">
+                            Upper/Base: $${(ratesUsed.installRate / 2).toFixed(2)}/LF • Pantry: $${ratesUsed.installRate}/LF
+                        </div>
                         <div class="breakdown-result">${formatCurrency(calc.install)}</div>
                     </div>
                 </div>

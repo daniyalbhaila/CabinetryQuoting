@@ -503,10 +503,21 @@ function renderLinearFootageSection(item) {
  * @returns {string} Section HTML
  */
 function renderFinishSection(item, settings) {
-    const finishOptions = Object.keys(FINISH_RATES)
+    const finishDropdownOrder = [
+        { key: 'Melamine', label: 'Melamine' },
+        { key: 'Paint/Lacquer', label: 'Paint/Lacquer' },
+        { key: 'PVC', label: 'PVC' },
+        { key: 'PET', label: 'PET/UV' },
+        { key: 'Skin', label: 'PET Skin' },
+        { key: 'Powder', label: 'Powder Spray' },
+        { key: 'Veneer', label: 'Wood Veneer' }
+    ];
+
+    const finishOptions = finishDropdownOrder
+        .filter(({ key }) => FINISH_RATES[key])
         .map(
-            (f) =>
-                `<option value="${f}"${item.finish === f ? ' selected' : ''}>${f}</option>`
+            ({ key, label }) =>
+                `<option value="${key}"${item.finish === key ? ' selected' : ''}>${label}</option>`
         )
         .join('');
 
