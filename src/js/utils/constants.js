@@ -53,8 +53,8 @@ export const DEFAULT_RATES = {
     DRAWER: 200,              // CAD per drawer
     ACCESSORY: 300,           // CAD per accessory
     EXCHANGE_RATE: 1.42,      // USD to CAD
-    MARKUP_FULL: 0.80,        // 80% markup for full house
-    MARKUP_SINGLE: 0.90,      // 90% markup for single project
+    MARKUP_FULL: 0.75,        // 75% markup for full house (updated 2026-07-05)
+    MARKUP_SINGLE: 0.80,      // 80% markup for single project (updated 2026-07-05)
     DISCOUNT: 0.50            // 50% discount
 };
 
