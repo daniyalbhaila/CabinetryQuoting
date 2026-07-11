@@ -47,14 +47,14 @@ export const CARCASS_RATES = {
 
 // Default rates
 export const DEFAULT_RATES = {
-    SHIPPING_PER_LF: 60,      // CAD per linear foot
-    INSTALL_PER_LF_FULL: 100, // CAD per linear foot (full house)
-    INSTALL_PER_LF_SINGLE: 120, // CAD per linear foot (single project)
+    SHIPPING_PER_LF: 80,      // CAD per linear foot (updated 2026-07-05)
+    INSTALL_PER_LF_FULL: 150, // CAD per linear foot (unified rate, updated 2026-07-05)
+    INSTALL_PER_LF_SINGLE: 150, // CAD per linear foot (unified rate, updated 2026-07-05)
     DRAWER: 200,              // CAD per drawer
     ACCESSORY: 300,           // CAD per accessory
     EXCHANGE_RATE: 1.42,      // USD to CAD
-    MARKUP_FULL: 0.80,        // 80% markup for full house
-    MARKUP_SINGLE: 0.90,      // 90% markup for single project
+    MARKUP_FULL: 0.75,        // 75% markup for full house (updated 2026-07-05)
+    MARKUP_SINGLE: 0.80,      // 80% markup for single project (updated 2026-07-05)
     DISCOUNT: 0.50            // 50% discount
 };
 
