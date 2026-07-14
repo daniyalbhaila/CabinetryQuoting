@@ -155,7 +155,7 @@ export async function fetchRecentQuotes() {
         .from('quotes')
         .select('id, name, updated_at, last_modified_by')
         .order('updated_at', { ascending: false })
-        .limit(20);
+        .limit(100);
 
     if (error) {
         console.error('Supabase List Error:', error);
