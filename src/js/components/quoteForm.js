@@ -298,6 +298,99 @@ function updateSaveButtonUI(status) {
     if (window.lucide) window.lucide.createIcons();
 }
 
+const HISTORY_PAGE_SIZE = 20;
+const HISTORY_SCROLL_THRESHOLD_PX = 48;
+
+let historyOffset = 0;
+let historyHasMore = true;
+let historyLoading = false;
+
+function getHistoryItemMarkup(quote) {
+    return `
+        <div class="history-item" data-quote-id="${quote.id}">
+            <div class="history-item-info">
+                <div class="history-item-name">${escapeHtml(quote.name || 'Untitled')}</div>
+                <div class="history-item-meta">
+                    ${formatDate(quote.updated_at)} ${formatTime(quote.updated_at)}
+                    <br><span class="text-xs opacity-75">By ${escapeHtml(quote.last_modified_by || 'Unknown')}</span>
+                </div>
+            </div>
+            <div class="history-item-actions">
+                <button class="btn-ghost btn-sm text-error" data-action="delete" data-quote-id="${quote.id}" title="Delete">
+                    <i data-lucide="trash-2"></i>
+                </button>
+                <button class="btn-ghost btn-sm" title="Load">
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function updateHistoryFooter(container) {
+    const footer = container.querySelector('[data-history-footer]');
+    if (!footer) return;
+
+    if (historyLoading && historyOffset > 0) {
+        footer.className = 'history-loading';
+        footer.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Loading more...';
+    } else if (!historyHasMore && historyOffset > 0) {
+        footer.className = 'history-end';
+        footer.textContent = 'All quotes loaded';
+    } else {
+        footer.className = 'history-footer';
+        footer.textContent = '';
+    }
+}
+
+async function loadMoreQuoteHistory(container) {
+    if (!container || historyLoading || !historyHasMore) return;
+
+    historyLoading = true;
+    updateHistoryFooter(container);
+
+    try {
+        const quotes = await fetchRecentQuotes({ offset: historyOffset, limit: HISTORY_PAGE_SIZE });
+
+        if (!quotes || quotes.length === 0) {
+            historyHasMore = false;
+            return;
+        }
+
+        const itemsMarkup = quotes.map(getHistoryItemMarkup).join('');
+        const footer = container.querySelector('[data-history-footer]');
+
+        if (footer) {
+            footer.insertAdjacentHTML('beforebegin', itemsMarkup);
+        } else {
+            container.insertAdjacentHTML('beforeend', itemsMarkup);
+        }
+
+        historyOffset += quotes.length;
+        if (quotes.length < HISTORY_PAGE_SIZE) {
+            historyHasMore = false;
+        }
+
+        if (window.lucide) window.lucide.createIcons();
+    } catch (err) {
+        console.error('Failed to load history page:', err);
+        if (historyOffset === 0) {
+            container.innerHTML = '<div class="history-empty text-error">Failed to load history</div>';
+        } else {
+            const footer = container.querySelector('[data-history-footer]');
+            if (footer) {
+                footer.className = 'history-empty text-error';
+                footer.textContent = 'Failed to load more quotes';
+            }
+        }
+        historyHasMore = false;
+    } finally {
+        historyLoading = false;
+        updateHistoryFooter(container);
+        if (window.lucide) window.lucide.createIcons();
+    }
+}
+
 /**
  * Render quote history list
  */
@@ -305,92 +398,75 @@ export async function renderQuoteHistory() {
     const container = getElementById('historyList');
     if (!container) return;
 
-    container.innerHTML = '<div class="p-4 text-center opacity-50"><i data-lucide="loader-2" class="spin"></i> Loading cloud history...</div>';
+    historyOffset = 0;
+    historyHasMore = true;
+    historyLoading = false;
+
+    container.innerHTML = [
+        '<div class="p-4 text-center opacity-50" data-history-loading><i data-lucide="loader-2" class="spin"></i> Loading cloud history...</div>',
+        '<div class="history-footer" data-history-footer></div>'
+    ].join('');
+
+    attachHistoryItemListeners(container);
     if (window.lucide) window.lucide.createIcons();
 
-    try {
-        const quotes = await fetchRecentQuotes();
+    await loadMoreQuoteHistory(container);
 
-        if (!quotes || quotes.length === 0) {
-            container.innerHTML = '<div class="history-empty">No cloud quotes found</div>';
-            return;
-        }
+    const initialLoader = container.querySelector('[data-history-loading]');
+    if (initialLoader) initialLoader.remove();
 
-        container.innerHTML = quotes
-            .map((quote) => {
-                // Supabase returns 'updated_at', we format that
-                const date = new Date(quote.updated_at);
-                return `
-                <div class="history-item" data-quote-id="${quote.id}">
-                    <div class="history-item-info">
-                        <div class="history-item-name">${escapeHtml(quote.name || 'Untitled')}</div>
-                        <div class="history-item-meta">
-                            ${formatDate(quote.updated_at)} ${formatTime(quote.updated_at)}
-                            <br><span class="text-xs opacity-75">By ${escapeHtml(quote.last_modified_by || 'Unknown')}</span>
-                        </div>
-                    </div>
-                    <div class="history-item-actions">
-                        <button class="btn-ghost btn-sm text-error" data-action="delete" data-quote-id="${quote.id}" title="Delete">
-                            <i data-lucide="trash-2"></i>
-                        </button>
-                        <button class="btn-ghost btn-sm" title="Load">
-                            <i data-lucide="arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            })
-            .join('');
-
-        // Add event listeners to history items
-        attachHistoryItemListeners();
-
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
-    } catch (err) {
-        console.error('Failed to load history:', err);
-        container.innerHTML = '<div class="history-empty text-error">Failed to load history</div>';
+    const hasItems = container.querySelector('.history-item');
+    if (!hasItems) {
+        container.innerHTML = '<div class="history-empty">No cloud quotes found</div>';
+        return;
     }
+
+    container.onscroll = () => {
+        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        if (distanceFromBottom <= HISTORY_SCROLL_THRESHOLD_PX) {
+            loadMoreQuoteHistory(container);
+        }
+    };
 }
 
 /**
- * Attach event listeners to history items
+ * Attach event listeners to history list
  */
-function attachHistoryItemListeners() {
-    const historyItems = document.querySelectorAll('.history-item');
-    historyItems.forEach((item) => {
-        // Main Click (Load)
-        item.addEventListener('click', async (e) => {
-            // Check if delete button was clicked
-            if (e.target.closest('[data-action="delete"]')) {
-                e.stopPropagation();
-                const btn = e.target.closest('[data-action="delete"]');
-                const quoteId = btn.dataset.quoteId;
+function attachHistoryItemListeners(container) {
+    if (!container || container.dataset.historyBound === 'true') return;
 
-                if (confirm('Are you sure you want to delete this quote from the cloud? This cannot be undone.')) {
-                    try {
-                        btn.disabled = true;
-                        await deleteQuote(quoteId);
-                        await renderQuoteHistory(); // Reload list
-                    } catch (err) {
-                        alert('Failed to delete quote');
-                        btn.disabled = false;
-                    }
+    container.addEventListener('click', async (e) => {
+        const deleteBtn = e.target.closest('[data-action="delete"]');
+        if (deleteBtn) {
+            e.stopPropagation();
+            const quoteId = deleteBtn.dataset.quoteId;
+
+            if (confirm('Are you sure you want to delete this quote from the cloud? This cannot be undone.')) {
+                try {
+                    deleteBtn.disabled = true;
+                    await deleteQuote(quoteId);
+                    await renderQuoteHistory();
+                } catch (err) {
+                    alert('Failed to delete quote');
+                    deleteBtn.disabled = false;
                 }
-                return;
             }
+            return;
+        }
 
-            const quoteId = item.dataset.quoteId;
-            if (!quoteId) return;
+        const item = e.target.closest('.history-item');
+        if (!item) return;
 
-            // Show loading state?
-            if (window.quoteApp && window.quoteApp.loadQuoteFromCloud) {
-                await window.quoteApp.loadQuoteFromCloud(quoteId);
-                hideHistory();
-            }
-        });
+        const quoteId = item.dataset.quoteId;
+        if (!quoteId) return;
+
+        if (window.quoteApp && window.quoteApp.loadQuoteFromCloud) {
+            await window.quoteApp.loadQuoteFromCloud(quoteId);
+            hideHistory();
+        }
     });
+
+    container.dataset.historyBound = 'true';
 }
 
 /**

@@ -145,17 +145,23 @@ export async function fetchQuote(supabaseId) {
 }
 
 /**
- * Fetch recent quotes list (Metadata only)
+ * Fetch a page of recent quotes (Metadata only)
+ * @param {Object} [options]
+ * @param {number} [options.offset=0] - Zero-based row offset
+ * @param {number} [options.limit=20] - Page size
  * @returns {Promise<Array>} List of quotes
  */
-export async function fetchRecentQuotes() {
+export async function fetchRecentQuotes({ offset = 0, limit = 20 } = {}) {
     if (!supabase) initSupabase();
+
+    const start = Math.max(0, offset);
+    const end = start + Math.max(1, limit) - 1;
 
     const { data, error } = await supabase
         .from('quotes')
         .select('id, name, updated_at, last_modified_by')
         .order('updated_at', { ascending: false })
-        .limit(20);
+        .range(start, end);
 
     if (error) {
         console.error('Supabase List Error:', error);
@@ -163,6 +169,25 @@ export async function fetchRecentQuotes() {
     }
 
     return data;
+}
+
+/**
+ * Fetch total quotes count from cloud
+ * @returns {Promise<number>} Total row count
+ */
+export async function fetchQuotesCount() {
+    if (!supabase) initSupabase();
+
+    const { count, error } = await supabase
+        .from('quotes')
+        .select('id', { head: true, count: 'exact' });
+
+    if (error) {
+        console.error('Supabase Count Error:', error);
+        throw error;
+    }
+
+    return count || 0;
 }
 
 /**
